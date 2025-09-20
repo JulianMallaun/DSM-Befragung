@@ -9,9 +9,9 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 st.markdown(
     """
     <style>
-    /* Schlanke, blaue Abtrennung links je Kriterium */
+    /* Breiterer blauer Trennstrich links je Kriterium */
     .crit-block { 
-        border-left: 4px solid #0f766e; 
+        border-left: 6px solid #0f766e; 
         padding: 6px 12px; 
         margin: 8px 0 16px 0; 
         background: transparent;
@@ -33,7 +33,7 @@ st.markdown(
 )
 
 st.title("Befragung Lastflexibilität – Hotel")
-st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Abschnitte & bereinigter Katalog")
+# (gewünscht) Untertitel / Caption entfernt
 
 # ----------------- Helpers -----------------
 def labeled_divider(label: str):
@@ -86,16 +86,21 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
 
-def criterion_block(title: str, helptext: str, options: list, key: str, disabled: bool):
+def criterion_block(title: str, helptext: str | None, options: list, key: str, disabled: bool):
     st.markdown('<div class="crit-block">', unsafe_allow_html=True)
     st.markdown(f'<div class="crit-title">{title}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="crit-help">{helptext}</div>', unsafe_allow_html=True)
+    if helptext:
+        st.markdown(f'<div class="crit-help">{helptext}</div>', unsafe_allow_html=True)
     value = st.radio("", options, key=key, disabled=disabled, horizontal=True, label_visibility="collapsed")
     st.markdown('</div>', unsafe_allow_html=True)
     return value
 
 def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
+
+def sget(key: str, default: str = ""):
+    # sichere Session-Abfrage: vermeidet AttributeError am Ende
+    return st.session_state[key] if key in st.session_state else default
 
 # ----------------- Kriterien-Optionen -----------------
 K1_OPTS = ["1 – kaum anpassbar","2 – etwas anpassbar","3 – gut anpassbar","4 – sehr gut anpassbar"]
@@ -185,7 +190,7 @@ if not st.session_state.started:
         elif not st.session_state.confirm:
             st.error("Bitte die Abschluss-Bestätigung setzen.")
         elif not st.session_state.hotel:
-            st.error("Bitte Hotel angeben (Pflichtfeld).")
+            st.error("Bitte Hotel angeben (Pflichtfeld)." )
         else:
             st.session_state.started = True
             st.rerun()
@@ -201,7 +206,8 @@ def device_form(section: str, device_name: str):
     with colB:
         leistung = st.number_input("Leistung (kW, optional)", min_value=0.0, step=0.1, key=f"kw_{device_name}", disabled=not vorhanden)
 
-    k1 = criterion_block("Leistung anpassen", "stufenlos oder nur ein/aus?", K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
+    # Hilfe-Text bei Leistung anpassen entfernt (dein Wunsch) → helptext=None
+    k1 = criterion_block("Leistung anpassen", None, K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
     k2 = criterion_block("Nutzungsdauer anpassbar", "wie lange drosselbar?", K2_OPTS, key=f"k2_{device_name}", disabled=not vorhanden)
     k3 = criterion_block("Energie-Nachholen", "braucht viel Extraenergie nach Drosselung?", K3_OPTS, key=f"k3_{device_name}", disabled=not vorhanden)
     k4 = criterion_block("Zeitliche Flexibilität", "fixe Zeiten oder frei?", K4_OPTS, key=f"k4_{device_name}", disabled=not vorhanden)
@@ -247,7 +253,6 @@ def device_form(section: str, device_name: str):
 if st.session_state.started:
     total = len(st.session_state.flat_catalog)
     if st.session_state.index < total:
-        # Satz/Untertitel unter Überschrift wurde entfernt (keine section-counter Ausgabe mehr)
         section, device = st.session_state.flat_catalog[st.session_state.index]
         device_form(section, device)
     else:
@@ -269,12 +274,12 @@ if st.session_state.started:
             df = pd.DataFrame(st.session_state.records)
             meta = {
                 "timestamp": datetime.utcnow().isoformat(),
-                "hotel": st.session_state.hotel,
-                "bereich": st.session_state.bereich,
-                "position": st.session_state.position,
-                "datum": str(st.session_state.datum),
-                "teilnehmername": st.session_state.teilnehmername,
-                "survey_version": "2025-09-sections",
+                "hotel": sget("hotel"),
+                "bereich": sget("bereich"),
+                "position": sget("position"),
+                "datum": str(sget("datum")),
+                "teilnehmername": sget("teilnehmername"),
+                "survey_version": "2025-09-sections-ui-hotfix",
             }
             for k, v in meta.items():
                 df[k] = v
