@@ -21,6 +21,26 @@ def get_gsheet_id():
         or st.secrets.get("gsheet", {}).get("id")
     )
 
+def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
+    """Entfernt NaN/NaT und ungeeignete Typen für gspread; konvertiert zu JSON-kompatiblen Werten."""
+    # Erst alle NaN/NaT zu None
+    df = df.where(pd.notnull(df), None)
+    # Sicherstellen, dass nachfolgende Konvertierung keine NaN reinbringt
+    records = []
+    for row in df.to_dict(orient="records"):
+        clean = {}
+        for k, v in row.items():
+            if v is None:
+                clean[k] = None
+            elif isinstance(v, (int, float, str, bool)):
+                # floats wie nan sollten durch Schritt oben bereits None sein
+                clean[k] = v
+            else:
+                # Fallback: in String konvertieren (z.B. Timestamp/Date/Decimal)
+                clean[k] = str(v)
+        records.append(clean)
+    return pd.DataFrame(records, columns=df.columns)
+
 GS_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
@@ -41,6 +61,7 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="100", cols="20")
             ws.append_row(list(df.columns))
+        # DataFrame in Listen umwandeln
         ws.append_rows(df.values.tolist())
         return f"✅ Erfolgreich an Google Sheets übertragen: {sh.title} (Tab: responses)."
     except Exception as e:
@@ -210,8 +231,8 @@ if consent and confirmation and hotel:
                 "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
             ]
             df = df[cols]
-            # NaN-Werte für Google Sheets bereinigen
-            df = df.where(pd.notnull(df), None)
+            # Robust bereinigen für Google Sheets (keine NaN/NaT, keine inkompatiblen Typen)
+            df = sanitize_for_gsheets(df)
 
             if "gcp_service_account" in st.secrets and get_gsheet_id():
                 st.info(submit_to_gsheets(df))
