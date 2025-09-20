@@ -6,14 +6,14 @@ import streamlit as st
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="wide")
 st.title("Befragung Lastflexibilität – Hotel")
-st.caption("Masterarbeit im Bereich Intelligente Energiesysteme, Online-Erhebung")
+st.caption("Masterarbeit im Bereich Intelligente Energiesysteme – Online-Erhebung")
 
 with st.expander("Einleitung", expanded=True):
     st.markdown(
         """
-        Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.
+        Vielen Dank, dass Sie an dieser Befragung teilnehmen. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.
         Die Daten werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.
-        Geschätzte Dauer: 20–30 Minuten.
+        Zeitaufwand: ca. 20–30 Minuten.
         """
     )
 
@@ -36,29 +36,15 @@ with col3:
 
 survey_date = st.date_input("Datum", value=datetime.today())
 
-with st.expander("Legende & Anleitung", expanded=False):
-    st.markdown(
-        """
-        **Vorhanden:** Gerät im Hotel vorhanden?  
-        **Leistung (kW):** falls bekannt.  
-        **Bewertung (1–4) je Kriterium:**  
-        - **Modulation:** 1 = <10 %, 2 = 10–25 %, 3 = 25–40 %, 4 = ≥40 %  
-        - **Dauer:** 1 = <15 min, 2 = 15–45 min, 3 = 45–120 min, 4 = ≥2 h  
-        - **Rebound:** 1 = sehr stark, 2 = stark, 3 = gering, 4 = kaum  
-        - **Betriebsfenster:** 1 = rigide, 2 = begrenzt, 3 = breit, 4 = frei  
-        """
-    )
-
-criteria_labels = ["Modulation", "Dauer", "Rebound", "Betriebsfenster"]
-criteria_help = {
-    "Modulation": "1=<10 %, 2=10–25 %, 3=25–40 %, 4=≥40 %",
-    "Dauer": "1=<15 min, 2=15–45 min, 3=45–120 min, 4=≥2 h",
-    "Rebound": "1=sehr stark, 2=stark, 3=gering, 4=kaum",
-    "Betriebsfenster": "1=rigide, 2=begrenzt, 3=breit, 4=frei",
-}
+criteria_labels = [
+    ("Modulation", "1=<10 %, 2=10–25 %, 3=25–40 %, 4=≥40 %"),
+    ("Dauer", "1=<15 min, 2=15–45 min, 3=45–120 min, 4=≥2 h"),
+    ("Rebound", "1=sehr stark, 2=stark, 3=gering, 4=kaum"),
+    ("Betriebsfenster", "1=rigide, 2=begrenzt, 3=breit, 4=frei"),
+]
 
 def device_form(key_prefix: str, title: str):
-    st.markdown(f"### {title}")
+    st.markdown(f"## {title}")
     col_a, col_b = st.columns([1, 1])
     with col_a:
         vorhanden = st.checkbox("Vorhanden", key=f"{key_prefix}_vorhanden")
@@ -68,27 +54,23 @@ def device_form(key_prefix: str, title: str):
         )
 
     ratings = {}
-    cols = st.columns(4)
-    for i, crit in enumerate(criteria_labels):
-        with cols[i]:
-            disabled = not vorhanden
-            ratings[crit] = st.select_slider(
-                crit,
-                options=[1, 2, 3, 4],
-                value=2,
-                help=criteria_help[crit],
-                key=f"{key_prefix}_{crit}",
-                disabled=disabled,
-            )
+    for crit, helptext in criteria_labels:
+        ratings[crit] = st.select_slider(
+            f"{crit} ({helptext})",
+            options=[1, 2, 3, 4],
+            value=2,
+            key=f"{key_prefix}_{crit}",
+            disabled=not vorhanden,
+        )
 
     return {
         "geraet": title,
         "vorhanden": vorhanden,
         "leistung_kw": leistung if vorhanden else 0.0,
-        **{f"{c.lower()}": ratings[c] for c in criteria_labels},
+        **{f"{c.lower()}": ratings[c] for c, _ in criteria_labels},
     }
 
-# Gerätekatalog – entsprechend dem gelieferten Fragebogen
+# Gerätekatalog
 catalog = {
     "A) Küche": {
         "A1) Kühlung / Kälte": [
@@ -114,6 +96,7 @@ catalog = {
         ],
         "A4) Lüftung": [
             "Küchenabluft (Haubenlüftung)",
+            "Küchenzuluft",
         ],
     },
     "B) Wellness / Spa / Pool": {
@@ -129,6 +112,7 @@ catalog = {
         ],
         "B4) Lüftung / Entfeuchtung": [
             "Schwimmbad Abluft",
+            "Schwimmbad Zuluft",
             "Schwimmbad Luftentfeuchtung",
         ],
     },
@@ -152,8 +136,9 @@ all_records = []
 for big_section, sub in catalog.items():
     st.header(big_section)
     for sub_section, items in sub.items():
-        with st.expander(sub_section, expanded=False):
-            for dev in items:
+        st.subheader(sub_section)
+        for dev in items:
+            with st.container():
                 rec = device_form(key_prefix=f"{sub_section}_{dev}", title=dev)
                 all_records.append(rec)
                 st.divider()
@@ -170,7 +155,7 @@ if submit:
     elif not confirmation:
         st.error("Bitte die Bestätigung am Ende setzen.")
     elif not hotel:
-        st.error("Bitte Hotel angeben.")
+        st.error("Bitte Hotel angeben (Pflichtfeld).")
     else:
         meta = {
             "timestamp": datetime.utcnow().isoformat(),
@@ -179,19 +164,18 @@ if submit:
             "position": position,
             "datum": str(survey_date),
             "teilnehmername": name,
-            "survey_version": "2025-09",
         }
         df = pd.DataFrame(all_records)
         for k, v in meta.items():
             df[k] = v
 
         cols = [
-            "timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
+            "timestamp","datum","hotel","bereich","position","teilnehmername",
             "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
         ]
         df = df[cols]
 
-        st.success("Erfassung erfolgreich. Download unten verfügbar.")
+        st.success("Erfassung erfolgreich. Daten werden unten bereitgestellt.")
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
@@ -221,7 +205,7 @@ if submit:
                     ws = sh.worksheet("responses")
                 except Exception:
                     ws = sh.add_worksheet(title="responses", rows="100", cols="20")
-                    ws.append_row(cols)  # Header
+                    ws.append_row(cols)
                 ws.append_rows(df.values.tolist())
                 st.success("Daten zusätzlich in Google Sheets gespeichert (Tab: responses).")
             except Exception as e:
@@ -232,6 +216,5 @@ if submit:
             )
 
 st.caption(
-    "© Masterarbeit – Intelligente Energiesysteme. Diese Anwendung speichert nur das technisch Notwendige. "
-    "Kontakt: Bitte wenden Sie sich an den Studienautor."
+    "© Masterarbeit – Intelligente Energiesysteme | Diese Anwendung sammelt keine personenbezogenen Daten über das technisch Notwendige hinaus."
 )
