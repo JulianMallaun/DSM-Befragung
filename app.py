@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 import io
 from datetime import datetime
@@ -89,6 +90,8 @@ if "index" not in st.session_state:
     st.session_state.index = 0
 if "records" not in st.session_state:
     st.session_state.records = []
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
 def device_form(device_name: str):
     st.subheader(device_name)
@@ -151,71 +154,75 @@ def device_form(device_name: str):
         st.rerun()
 
     if saved:
-        st.session_state.index = min(len(CATALOG) - 1, st.session_state.index + 1)
+        st.session_state.index = min(len(CATALOG), st.session_state.index + 1)  # darf len(CATALOG) erreichen
         st.rerun()
 
-# --- Start ---
+# --- Google Sheets Submission ---
+GS_SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+]
+
+def submit_to_gsheets(df: pd.DataFrame) -> str:
+    """Schreibt die Daten in das Google Sheet (Tab 'responses'). Gibt Status-Text zurück."""
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=GS_SCOPES)
+        client = gspread.authorize(creds)
+        sh = client.open_by_key(st.secrets["gsheet_id"])
+        try:
+            ws = sh.worksheet("responses")
+        except Exception:
+            ws = sh.add_worksheet(title="responses", rows="100", cols="20")
+            ws.append_row(list(df.columns))  # Header einmalig
+        ws.append_rows(df.values.tolist())
+        return "✅ Die Daten wurden erfolgreich an Google Sheets übertragen (Tab: responses)."
+    except Exception as e:
+        return f"⚠️ Google Sheets Übertragung nicht möglich: {e}"
+
+# --- Ablaufsteuerung ---
 if consent and confirmation and hotel:
-    labeled_divider(f"Frage {st.session_state.index + 1} von {len(CATALOG)}")
-    device_form(CATALOG[st.session_state.index])
+    if st.session_state.index < len(CATALOG):
+        labeled_divider(f"Frage {st.session_state.index + 1} von {len(CATALOG)}")
+        device_form(CATALOG[st.session_state.index])
+    else:
+        # Abschluss-Seite
+        labeled_divider("Abschluss")
+        st.success("🎉 Vielen Dank für Ihre Teilnahme!")
+        st.markdown("""
+        Die Umfrage ist nun abgeschlossen.  
+        Ihre Antworten wurden gespeichert und an den Studienautor übermittelt.  
+        Sie können diese Seite jetzt schließen.
+        """)
+
+        # Einmalige Übertragung an Google Sheets (kein Excel-Download)
+        if not st.session_state.submitted and len(st.session_state.records) > 0:
+            export_df = pd.DataFrame(st.session_state.records)
+            meta = {
+                "timestamp": datetime.utcnow().isoformat(),
+                "hotel": hotel,
+                "bereich": bereich,
+                "position": position,
+                "datum": str(survey_date),
+                "teilnehmername": name,
+                "survey_version": "2025-09",
+            }
+            for k, v in meta.items():
+                export_df[k] = v
+            cols = [
+                "timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
+                "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
+            ]
+            export_df = export_df[cols]
+
+            if "gcp_service_account" in st.secrets and "gsheet_id" in st.secrets:
+                status = submit_to_gsheets(export_df)
+                st.info(status)
+            else:
+                st.warning("Google Sheets ist noch nicht konfiguriert. Bitte Secrets hinterlegen (Service-Account + gsheet_id).")
+            st.session_state.submitted = True
 else:
     st.warning("Bitte Einwilligung, Stammdaten (Hotel) und Abschluss-Bestätigung setzen, um zu starten.")
-
-# --- Export ---
-labeled_divider("Export")
-export_df = pd.DataFrame(st.session_state.records)
-if not export_df.empty:
-    meta = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "hotel": hotel,
-        "bereich": bereich,
-        "position": position,
-        "datum": str(survey_date),
-        "teilnehmername": name,
-        "survey_version": "2025-09",
-    }
-    for k, v in meta.items():
-        export_df[k] = v
-    cols = [
-        "timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
-        "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
-    ]
-    export_df = export_df[cols]
-
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="xlsxwriter") as writer:
-        export_df.to_excel(writer, index=False, sheet_name="responses")
-    st.download_button(
-        "Excel-Datei herunterladen",
-        data=buf.getvalue(),
-        file_name="befragung_responses.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-    # --- Google Sheets optional ---
-    if "gcp_service_account" in st.secrets and "gsheet_id" in st.secrets:
-        try:
-            import gspread
-            from google.oauth2.service_account import Credentials
-            creds = Credentials.from_service_account_info(
-                st.secrets["gcp_service_account"],
-                scopes=[
-                    "https://www.googleapis.com/auth/spreadsheets",
-                    "https://www.googleapis.com/auth/drive.file",
-                ],
-            )
-            client = gspread.authorize(creds)
-            sh = client.open_by_key(st.secrets["gsheet_id"])
-            try:
-                ws = sh.worksheet("responses")
-            except Exception:
-                ws = sh.add_worksheet(title="responses", rows="100", cols="20")
-                ws.append_row(cols)
-            ws.append_rows(export_df.values.tolist())
-            st.success("Daten zusätzlich in Google Sheets gespeichert (Tab: responses).")
-        except Exception as e:
-            st.warning(f"Google Sheets Speicherung nicht möglich: {e}")
-    else:
-        st.caption("Google Sheets ist optional. Secrets setzen, um direkt ins Sheet zu schreiben.")
 
 st.caption("© Masterarbeit – Intelligente Energiesysteme | Es werden nur für die Erhebung notwendige Daten gespeichert.")
