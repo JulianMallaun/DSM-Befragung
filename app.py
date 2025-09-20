@@ -14,8 +14,7 @@ st.markdown(
     .crit-help {font-size: 0.9rem; color: #6b7280; margin-top: 0; margin-bottom: 8px;}
     .section-counter {font-size: 0.9rem; color: #6b7280;}
     </style>
-    """,
-    unsafe_allow_html=True,
+    """, unsafe_allow_html=True,
 )
 
 st.title("Befragung Lastflexibilität – Hotel")
@@ -138,6 +137,19 @@ if not st.session_state.started:
     Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
     **Geschätzte Dauer:** ~15 Minuten.
     """)
+
+    st.markdown("""
+    ### Einverständniserklärung
+    Mit der Teilnahme an dieser Befragung erklären Sie sich einverstanden, dass:
+
+    - Ihre Teilnahme freiwillig erfolgt und Sie den Fragebogen jederzeit abbrechen können, ohne dass Ihnen dadurch Nachteile entstehen.  
+    - Ihre Angaben ausschließlich zu wissenschaftlichen Zwecken im Rahmen einer Masterarbeit an der FH Burgenland verwendet werden.  
+    - Ihre Daten anonymisiert erhoben und ausgewertet werden, sodass keine Rückschlüsse auf einzelne Personen oder Betriebe möglich sind.  
+    - Die Ergebnisse ausschließlich von berechtigten Personen (z. B. Betreuerinnen, Gutachterinnen) eingesehen werden.  
+
+    **Mit dem Ausfüllen und Absenden des Fragebogens geben Sie Ihre Zustimmung zur Teilnahme.**
+    """)
+
     consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", value=False, key="consent")
     labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
@@ -161,7 +173,7 @@ if not st.session_state.started:
             st.error("Bitte Hotel angeben (Pflichtfeld).")
         else:
             st.session_state.started = True
-            st.rerun()  # FIX: ersetzt st.experimental_rerun()
+            st.rerun()
 
 # ----------------- Formular pro Gerät -----------------
 def device_form(section: str, device_name: str):
