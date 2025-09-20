@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 from datetime import datetime
 import pandas as pd
@@ -8,23 +7,21 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 
 # ----------------- Global Styles -----------------
 st.markdown(
-    '''
+    """
     <style>
-    .crit-block{
-        border-top: 3px solid #0f766e;
-        padding: 10px 0 12px 0;
-        margin: 12px 0 12px 0;
-        background: transparent;
-        border-radius: 0;
-    }
-    .crit-title{ font-size:1.12rem; font-weight:600; margin-bottom:2px; color:#0f172a; }
-    .crit-help{ font-size:0.9rem; color:#6b7280; margin-bottom:6px; }
+    .crit-block {padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 14px; margin-bottom: 12px; background: #fafafa;}
+    .crit-title {font-size: 1.05rem; font-weight: 700; margin-bottom: 2px;}
+    .crit-help {font-size: 0.9rem; color: #6b7280; margin-top: 0; margin-bottom: 8px;}
+    .section-counter {font-size: 0.9rem; color: #6b7280;}
     </style>
-    ''', unsafe_allow_html=True
+    """,
+    unsafe_allow_html=True,
 )
 
 st.title("Befragung Lastflexibilität – Hotel")
+st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Abschnitte & bereinigter Katalog")
 
+# ----------------- Helpers -----------------
 def labeled_divider(label: str):
     st.markdown(f"---\n###### {label}")
 
@@ -75,11 +72,10 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
 
-def criterion_block(title: str, helptext: str | None, options: list, key: str, disabled: bool):
+def criterion_block(title: str, helptext: str, options: list, key: str, disabled: bool):
     st.markdown('<div class="crit-block">', unsafe_allow_html=True)
     st.markdown(f'<div class="crit-title">{title}</div>', unsafe_allow_html=True)
-    if helptext:
-        st.markdown(f'<div class="crit-help">{helptext}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="crit-help">{helptext}</div>', unsafe_allow_html=True)
     value = st.radio("", options, key=key, disabled=disabled, horizontal=True, label_visibility="collapsed")
     st.markdown('</div>', unsafe_allow_html=True)
     return value
@@ -87,67 +83,76 @@ def criterion_block(title: str, helptext: str | None, options: list, key: str, d
 def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
 
-def sget(key: str, default: str = ""):
-    return st.session_state.get(key, default)
-
+# ----------------- Kriterien-Optionen -----------------
 K1_OPTS = ["1 – kaum anpassbar","2 – etwas anpassbar","3 – gut anpassbar","4 – sehr gut anpassbar"]
 K2_OPTS = ["1 – <15 min","2 – 15–45 min","3 – 45–120 min","4 – ≥2 h"]
 K3_OPTS = ["1 – sehr viel Extraenergie","2 – viel Extraenergie","3 – wenig Extraenergie","4 – kaum Extraenergie"]
 K4_OPTS = ["1 – feste Zeiten","2 – eingeschränkt flexibel","3 – eher flexibel","4 – völlig flexibel"]
 
+# ----------------- Gerätekatalog -----------------
 CATALOG = {
     "A) Küche": [
-        "Kühlhaus","Tiefkühlhaus","Kombidämpfer","Fritteuse","Induktionsherd","Geschirrspülmaschine"
+        "Kühlhaus",
+        "Tiefkühlhaus",
+        "Kombidämpfer",
+        "Fritteuse",
+        "Induktionsherd",
+        "Geschirrspülmaschine",
     ],
     "B) Wellness / Spa / Pool": [
-        "Sauna","Dampfbad","Pool-Umwälzpumpe","Schwimmbad-Lüftung/Entfeuchtung"
+        "Sauna",
+        "Dampfbad",
+        "Pool-Umwälzpumpe",
+        "Schwimmbad-Lüftung/Entfeuchtung",
     ],
     "C) Zimmer & Allgemeinbereiche": [
-        "Zimmerbeleuchtung","Aufzüge","Waschmaschine","Trockner","Wallbox (E-Ladepunkte)"
+        "Zimmerbeleuchtung",
+        "Aufzüge",
+        "Waschmaschine",
+        "Trockner",
+        "Wallbox (E-Ladepunkte)",
     ],
 }
 
-if "index" not in st.session_state: st.session_state.index = 0
-if "started" not in st.session_state: st.session_state.started = False
+# ----------------- Session -----------------
+if "index" not in st.session_state:
+    st.session_state.index = 0
+if "started" not in st.session_state:
+    st.session_state.started = False
 if "flat_catalog" not in st.session_state:
-    st.session_state.flat_catalog = [(sec, dev) for sec, devices in CATALOG.items() for dev in devices]
-if "records" not in st.session_state: st.session_state.records = []
-if "submitted" not in st.session_state: st.session_state.submitted = False
+    flat = []
+    for section, devices in CATALOG.items():
+        for dev in devices:
+            flat.append((section, dev))
+    st.session_state.flat_catalog = flat
+if "records" not in st.session_state:
+    st.session_state.records = []
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
+# ----------------- Intro & Stammdaten (nur vor Start sichtbar) -----------------
 if not st.session_state.started:
-    st.markdown(
-        '''
-        **Einleitung**  
-        Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
-        Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
-        **Geschätzte Dauer:** ~15 Minuten.
-        '''
-    )
-    st.markdown(
-        '''
-        ### Einverständniserklärung
-        Mit der Teilnahme an dieser Befragung erklären Sie sich einverstanden, dass:
-        - Teilnahme freiwillig, Abbruch jederzeit ohne Nachteile.
-        - Verwendung ausschließlich zu wissenschaftlichen Zwecken (FH Burgenland).
-        - Anonymisierte Erhebung/Auswertung, keine Rückschlüsse auf Personen/Betriebe.
-        - Einsicht nur für berechtigte Personen.
-        **Mit dem Absenden geben Sie Ihre Zustimmung.**
-        '''
-    )
-    st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", key="consent")
+    st.markdown("""
+    **Einleitung**  
+    Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
+    Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
+    **Geschätzte Dauer:** ~15 Minuten.
+    """)
+    consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", value=False, key="consent")
     labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.text_input("Hotel", placeholder="Hotel Mustermann", key="hotel")
+        hotel = st.text_input("Hotel", placeholder="Hotel Mustermann", key="hotel")
     with col2:
-        st.text_input("Bereich/Abteilung", placeholder="Küche, Haustechnik, ...", key="bereich")
+        bereich = st.text_input("Bereich/Abteilung", placeholder="Küche, Haustechnik, ...", key="bereich")
     with col3:
-        st.text_input("Position", placeholder="Leitung Küche, Haustechnik, ...", key="position")
-    st.date_input("Datum", value=datetime.today(), key="datum")
-    st.text_input("Name (optional)", key="teilnehmername")
-    st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+        position = st.text_input("Position", placeholder="Leitung Küche, Haustechnik, ...", key="position")
+    survey_date = st.date_input("Datum", value=datetime.today(), key="datum")
+    name = st.text_input("Name (optional)", key="teilnehmername")
+    confirmation = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
 
-    if st.button("Start – zur ersten Frage →", type="primary", use_container_width=True):
+    start = st.button("Start – zur ersten Frage →", type="primary", use_container_width=True)
+    if start:
         if not st.session_state.consent:
             st.error("Bitte Einverständniserklärung bestätigen.")
         elif not st.session_state.confirm:
@@ -155,39 +160,39 @@ if not st.session_state.started:
         elif not st.session_state.hotel:
             st.error("Bitte Hotel angeben (Pflichtfeld).")
         else:
-            st.session_state.meta = {
-                "hotel": sget("hotel"), "bereich": sget("bereich"), "position": sget("position"),
-                "datum": sget("datum"), "teilnehmername": sget("teilnehmername")
-            }
             st.session_state.started = True
-            st.rerun()
+            st.rerun()  # FIX: ersetzt st.experimental_rerun()
 
+# ----------------- Formular pro Gerät -----------------
 def device_form(section: str, device_name: str):
     st.header(section)
     st.subheader(device_name)
+
     colA, colB = st.columns([1,1])
     with colA:
         vorhanden = st.checkbox("Vorhanden", key=f"vh_{device_name}")
     with colB:
         leistung = st.number_input("Leistung (kW, optional)", min_value=0.0, step=0.1, key=f"kw_{device_name}", disabled=not vorhanden)
 
-    k1 = criterion_block("Leistung anpassen", None, K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
+    k1 = criterion_block("Leistung anpassen", "stufenlos oder nur ein/aus?", K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
     k2 = criterion_block("Nutzungsdauer anpassbar", "wie lange drosselbar?", K2_OPTS, key=f"k2_{device_name}", disabled=not vorhanden)
     k3 = criterion_block("Energie-Nachholen", "braucht viel Extraenergie nach Drosselung?", K3_OPTS, key=f"k3_{device_name}", disabled=not vorhanden)
     k4 = criterion_block("Zeitliche Flexibilität", "fixe Zeiten oder frei?", K4_OPTS, key=f"k4_{device_name}", disabled=not vorhanden)
 
-    c1, c2, c3 = st.columns([1,1,1])
-    with c1:
+    cols_btn = st.columns([1,1,1])
+    with cols_btn[0]:
         back = st.button("← Zurück", use_container_width=True, disabled=st.session_state.index == 0)
-    with c2:
+    with cols_btn[1]:
         skip = st.button("Überspringen", use_container_width=True)
-    with c3:
+    with cols_btn[2]:
         next_btn = st.button("Speichern & Weiter →", type="primary", use_container_width=True)
 
     saved = False
     if next_btn:
         rec = {
-            "section": section, "geraet": device_name, "vorhanden": bool(vorhanden),
+            "section": section,
+            "geraet": device_name,
+            "vorhanden": bool(vorhanden),
             "leistung_kw": float(leistung) if vorhanden else 0.0,
             "modulation": choice_to_int(k1) if vorhanden else None,
             "dauer": choice_to_int(k2) if vorhanden else None,
@@ -211,9 +216,11 @@ def device_form(section: str, device_name: str):
         st.session_state.index = min(len(st.session_state.flat_catalog), st.session_state.index + 1)
         st.rerun()
 
+# ----------------- Flow -----------------
 if st.session_state.started:
     total = len(st.session_state.flat_catalog)
     if st.session_state.index < total:
+        st.markdown(f'<div class="section-counter">Frage {st.session_state.index + 1} von {total}</div>', unsafe_allow_html=True)
         section, device = st.session_state.flat_catalog[st.session_state.index]
         device_form(section, device)
     else:
@@ -223,25 +230,31 @@ if st.session_state.started:
         if not st.session_state.submitted:
             if len(st.session_state.records) == 0:
                 st.session_state.records.append({
-                    "section": "(keine)", "geraet": "(keine Angaben)",
-                    "vorhanden": None, "leistung_kw": None,
-                    "modulation": None, "dauer": None, "rebound": None, "betriebsfenster": None,
+                    "section": "(keine)",
+                    "geraet": "(keine Angaben)",
+                    "vorhanden": None,
+                    "leistung_kw": None,
+                    "modulation": None,
+                    "dauer": None,
+                    "rebound": None,
+                    "betriebsfenster": None,
                 })
             df = pd.DataFrame(st.session_state.records)
-            meta_from_start = st.session_state.get("meta", {})
             meta = {
                 "timestamp": datetime.utcnow().isoformat(),
-                "hotel": meta_from_start.get("hotel", sget("hotel")),
-                "bereich": meta_from_start.get("bereich", sget("bereich")),
-                "position": meta_from_start.get("position", sget("position")),
-                "datum": str(meta_from_start.get("datum", sget("datum"))),
-                "teilnehmername": meta_from_start.get("teilnehmername", sget("teilnehmername")),
-                "survey_version": "2025-09-requirements-fix",
+                "hotel": st.session_state.hotel,
+                "bereich": st.session_state.bereich,
+                "position": st.session_state.position,
+                "datum": str(st.session_state.datum),
+                "teilnehmername": st.session_state.teilnehmername,
+                "survey_version": "2025-09-sections",
             }
             for k, v in meta.items():
                 df[k] = v
-            cols = ["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
-                    "section","geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"]
+            cols = [
+                "timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
+                "section","geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
+            ]
             df = df[cols]
             if "gcp_service_account" in st.secrets and get_gsheet_id():
                 st.info(submit_to_gsheets(df))
