@@ -99,7 +99,7 @@ def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
 
 def sget(key: str, default: str = ""):
-    return st.session_state[key] if key in st.session_state else default
+    return st.session_state.get(key, default)
 
 # ----------------- Kriterien-Optionen -----------------
 K1_OPTS = ["1 – kaum anpassbar","2 – etwas anpassbar","3 – gut anpassbar","4 – sehr gut anpassbar"]
@@ -177,21 +177,14 @@ if not st.session_state.started:
     labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
     with col1:
-        hotel = st.text_input("Hotel", placeholder="Hotel Mustermann", key="hotel")
+        st.text_input("Hotel", placeholder="Hotel Mustermann", key="hotel")
     with col2:
-        bereich = st.text_input("Bereich/Abteilung", placeholder="Küche, Haustechnik, ...", key="bereich")
+        st.text_input("Bereich/Abteilung", placeholder="Küche, Haustechnik, ...", key="bereich")
     with col3:
-        position = st.text_input("Position", placeholder="Leitung Küche, Haustechnik, ...", key="position")
-    survey_date = st.date_input("Datum", value=datetime.today(), key="datum")
-    name = st.text_input("Name (optional)", key="teilnehmername")
-    confirmation = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
-
-    # Mirror to session (fix)
-    st.session_state.hotel = hotel
-    st.session_state.bereich = bereich
-    st.session_state.position = position
-    st.session_state.teilnehmername = name
-    st.session_state.datum = survey_date
+        st.text_input("Position", placeholder="Leitung Küche, Haustechnik, ...", key="position")
+    st.date_input("Datum", value=datetime.today(), key="datum")
+    st.text_input("Name (optional)", key="teilnehmername")
+    st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
 
     start = st.button("Start – zur ersten Frage →", type="primary", use_container_width=True)
     if start:
