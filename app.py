@@ -210,6 +210,9 @@ if consent and confirmation and hotel:
                 "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
             ]
             df = df[cols]
+            # NaN-Werte für Google Sheets bereinigen
+            df = df.where(pd.notnull(df), None)
+
             if "gcp_service_account" in st.secrets and get_gsheet_id():
                 st.info(submit_to_gsheets(df))
             else:
