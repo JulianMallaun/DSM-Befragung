@@ -6,12 +6,16 @@ import streamlit as st
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
 st.title("Befragung Lastflexibilität – Hotel")
-st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Vereinfachte Version")
+st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Vereinfachte Version mit Word-Bezeichnungen")
 
+# -------------------------------------------------
+# Helpers
+# -------------------------------------------------
 def labeled_divider(label: str):
     st.markdown(f"---\n###### {label}")
 
 def get_gsheet_id():
+    # robust: akzeptiert gsheet_id auf Top-Level ODER innerhalb gcp_service_account bzw. gsheet.id
     return (
         st.secrets.get("gsheet_id")
         or st.secrets.get("gcp_service_account", {}).get("gsheet_id")
@@ -19,12 +23,14 @@ def get_gsheet_id():
     )
 
 def rows_for_gsheets(df: pd.DataFrame):
+    """Alles als String senden (None/NaN -> ""), damit 100% JSON-kompatibel."""
     records = df.to_dict(orient="records")
     rows = []
     for r in records:
         row = []
         for col in df.columns:
             v = r.get(col, None)
+            # NaN-Check ohne numpy: NaN != NaN ist True
             if v is None or (isinstance(v, float) and v != v):
                 row.append("")
             else:
@@ -58,6 +64,9 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
 
+# -------------------------------------------------
+# Einleitung & Consent
+# -------------------------------------------------
 st.markdown("""
 **Einleitung**  
 Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
@@ -69,6 +78,9 @@ consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilna
 if not consent:
     st.info("Bitte Einverständniserklärung bestätigen.")
 
+# -------------------------------------------------
+# Stammdaten
+# -------------------------------------------------
 labeled_divider("Stammdaten")
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -81,14 +93,23 @@ survey_date = st.date_input("Datum", value=datetime.today())
 name = st.text_input("Name (optional)")
 confirmation = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.")
 
-MOD_OPTS = ["1 – <10 %", "2 – 10–25 %", "3 – 25–40 %", "4 – ≥40 %"]
-DAU_OPTS = ["1 – <15 min", "2 – 15–45 min", "3 – 45–120 min", "4 – ≥2 h"]
-REB_OPTS = ["1 – sehr stark", "2 – stark", "3 – gering", "4 – kaum"]
-BW_OPTS  = ["1 – rigide", "2 – begrenzt", "3 – breit", "4 – frei"]
+# -------------------------------------------------
+# Kriterien (Bezeichnungen exakt wie im Word-Dokument)
+#  Skala: 1 = kaum möglich, 2 = etwas möglich, 3 = gut möglich, 4 = sehr gut möglich
+#  Mapping der internen Spalten bleibt wie gehabt:
+#   modulation        -> Leistung anpassen
+#   dauer             -> Nutzungsdauer anpassbar
+#   rebound           -> Energie-Nachholen
+#   betriebsfenster   -> Zeitliche Flexibilität
+# -------------------------------------------------
+SCALE_OPTS = ["1 – kaum möglich", "2 – etwas möglich", "3 – gut möglich", "4 – sehr gut möglich"]
 
 def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
 
+# -------------------------------------------------
+# Vereinfachter Katalog
+# -------------------------------------------------
 CATALOG = {
     "A) Küche": [
         "Kühlhaus",
@@ -114,6 +135,9 @@ CATALOG = {
     ],
 }
 
+# -------------------------------------------------
+# Session
+# -------------------------------------------------
 if "index" not in st.session_state:
     st.session_state.index = 0
 if "flat_catalog" not in st.session_state:
@@ -123,6 +147,9 @@ if "records" not in st.session_state:
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
+# -------------------------------------------------
+# Formular für ein Gerät
+# -------------------------------------------------
 def device_form(device_name: str):
     st.subheader(device_name)
     colA, colB = st.columns([1,1])
@@ -130,14 +157,26 @@ def device_form(device_name: str):
         vorhanden = st.checkbox("Vorhanden", key=f"vh_{device_name}")
     with colB:
         leistung = st.number_input("Leistung (kW, optional)", min_value=0.0, step=0.1, key=f"kw_{device_name}", disabled=not vorhanden)
-    st.markdown("**Modulation**"); st.caption("Anpassungsgrad der Leistung")
-    mod = st.radio(" ", MOD_OPTS, key=f"mod_{device_name}", disabled=not vorhanden, horizontal=True)
-    st.markdown("**Dauer**"); st.caption("Länge der Anpassungsphase")
-    dau = st.radio("  ", DAU_OPTS, key=f"dau_{device_name}", disabled=not vorhanden, horizontal=True)
-    st.markdown("**Rebound**"); st.caption("Mehrverbrauch nach Anpassung")
-    reb = st.radio("   ", REB_OPTS, key=f"reb_{device_name}", disabled=not vorhanden, horizontal=True)
-    st.markdown("**Betriebsfenster**"); st.caption("Zeitliche Einsatzflexibilität")
-    bw  = st.radio("    ", BW_OPTS, key=f"bw_{device_name}", disabled=not vorhanden, horizontal=True)
+
+    # 1) Leistung anpassen
+    st.markdown("**Leistung anpassen**")
+    st.caption("stufenlos oder nur ein/aus?")
+    k1 = st.radio(" ", SCALE_OPTS, key=f"k1_{device_name}", disabled=not vorhanden, horizontal=True)
+
+    # 2) Nutzungsdauer anpassbar
+    st.markdown("**Nutzungsdauer anpassbar**")
+    st.caption("wie lange drosselbar?")
+    k2 = st.radio("  ", SCALE_OPTS, key=f"k2_{device_name}", disabled=not vorhanden, horizontal=True)
+
+    # 3) Energie-Nachholen
+    st.markdown("**Energie-Nachholen**")
+    st.caption("braucht viel Extraenergie nach Drosselung?")
+    k3 = st.radio("   ", SCALE_OPTS, key=f"k3_{device_name}", disabled=not vorhanden, horizontal=True)
+
+    # 4) Zeitliche Flexibilität
+    st.markdown("**Zeitliche Flexibilität**")
+    st.caption("fixe Zeiten oder frei?")
+    k4  = st.radio("    ", SCALE_OPTS, key=f"k4_{device_name}", disabled=not vorhanden, horizontal=True)
 
     cols_btn = st.columns([1,1,1])
     with cols_btn[0]:
@@ -153,10 +192,11 @@ def device_form(device_name: str):
             "geraet": device_name,
             "vorhanden": bool(vorhanden),
             "leistung_kw": float(leistung) if vorhanden else 0.0,
-            "modulation": choice_to_int(mod) if vorhanden else None,
-            "dauer": choice_to_int(dau) if vorhanden else None,
-            "rebound": choice_to_int(reb) if vorhanden else None,
-            "betriebsfenster": choice_to_int(bw) if vorhanden else None,
+            # interne Spalten bleiben stabil für dein Sheet:
+            "modulation": choice_to_int(k1) if vorhanden else None,
+            "dauer": choice_to_int(k2) if vorhanden else None,
+            "rebound": choice_to_int(k3) if vorhanden else None,
+            "betriebsfenster": choice_to_int(k4) if vorhanden else None,
         }
         st.session_state.records = [r for r in st.session_state.records if r["geraet"] != device_name]
         st.session_state.records.append(rec)
@@ -175,6 +215,9 @@ def device_form(device_name: str):
         st.session_state.index = min(len(st.session_state.flat_catalog), st.session_state.index + 1)
         st.rerun()
 
+# -------------------------------------------------
+# Flow
+# -------------------------------------------------
 if consent and confirmation and hotel:
     if st.session_state.index < len(st.session_state.flat_catalog):
         total = len(st.session_state.flat_catalog)
@@ -203,7 +246,7 @@ if consent and confirmation and hotel:
                 "position": position,
                 "datum": str(survey_date),
                 "teilnehmername": name,
-                "survey_version": "2025-09-simplified",
+                "survey_version": "2025-09-simplified-wordlabels",
             }
             for k, v in meta.items():
                 df[k] = v
