@@ -23,9 +23,7 @@ def get_gsheet_id():
 
 def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
     """Entfernt NaN/NaT und ungeeignete Typen für gspread; konvertiert zu JSON-kompatiblen Werten."""
-    # Erst alle NaN/NaT zu None
-    df = df.where(pd.notnull(df), None)
-    # Sicherstellen, dass nachfolgende Konvertierung keine NaN reinbringt
+    df = df.where(pd.notnull(df), None)  # NaN/NaT -> None
     records = []
     for row in df.to_dict(orient="records"):
         clean = {}
@@ -33,11 +31,9 @@ def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
             if v is None:
                 clean[k] = None
             elif isinstance(v, (int, float, str, bool)):
-                # floats wie nan sollten durch Schritt oben bereits None sein
                 clean[k] = v
             else:
-                # Fallback: in String konvertieren (z.B. Timestamp/Date/Decimal)
-                clean[k] = str(v)
+                clean[k] = str(v)  # Fallback
         records.append(clean)
     return pd.DataFrame(records, columns=df.columns)
 
@@ -61,8 +57,13 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="100", cols="20")
             ws.append_row(list(df.columns))
-        # DataFrame in Listen umwandeln
-        ws.append_rows(df.values.tolist())
+
+        # WICHTIG: keine df.values.tolist() (das erzeugt wieder numpy.nan)
+        # Stattdessen Reihenfolge explizit anhand der Spalten:
+        records = df.to_dict(orient="records")
+        ordered = [[r.get(col, None) for col in df.columns] for r in records]
+
+        ws.append_rows(ordered)
         return f"✅ Erfolgreich an Google Sheets übertragen: {sh.title} (Tab: responses)."
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
