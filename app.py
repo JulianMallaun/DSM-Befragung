@@ -1,6 +1,7 @@
 
 from __future__ import annotations
 from datetime import datetime
+import json
 import pandas as pd
 import streamlit as st
 
@@ -31,6 +32,7 @@ def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
             if v is None:
                 clean[k] = None
             elif isinstance(v, (int, float, str, bool)):
+                # float('nan') dürfte es hier dank None nicht mehr geben
                 clean[k] = v
             else:
                 clean[k] = str(v)  # Fallback
@@ -58,8 +60,7 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
             ws = sh.add_worksheet(title="responses", rows="100", cols="20")
             ws.append_row(list(df.columns))
 
-        # WICHTIG: keine df.values.tolist() (das erzeugt wieder numpy.nan)
-        # Stattdessen Reihenfolge explizit anhand der Spalten:
+        # Reihenfolge explizit anhand der Spalten, um NaN-Re-Introduktion zu vermeiden
         records = df.to_dict(orient="records")
         ordered = [[r.get(col, None) for col in df.columns] for r in records]
 
@@ -232,10 +233,25 @@ if consent and confirmation and hotel:
                 "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
             ]
             df = df[cols]
-            # Robust bereinigen für Google Sheets (keine NaN/NaT, keine inkompatiblen Typen)
+
+            # 🔎 Debug-Tool (opt-in)
+            if st.checkbox("🔍 Debug: Zeige erste Zeilen vor Google Sheets Upload"):
+                st.dataframe(df.head(10))
+                try:
+                    json.dumps(df.to_dict(orient="records"))
+                    st.success("✅ Alle Werte JSON-kompatibel (json.dumps OK)")
+                except Exception as e:
+                    st.error(f"❌ JSON Fehler: {e}")
+                    st.json(df.to_dict(orient="records"))
+
+            # Robust bereinigen & geordnete Records erzeugen
             df = sanitize_for_gsheets(df)
+            records = df.to_dict(orient="records")
+            ordered = [[r.get(col, None) for col in df.columns] for r in records]
 
             if "gcp_service_account" in st.secrets and get_gsheet_id():
+                # Übergabe an submit-Funktion mit dem bereinigten DataFrame
+                # (die Funktion generiert erneut ordered; doppelt hält besser)
                 st.info(submit_to_gsheets(df))
             else:
                 st.warning("Google Sheets ist nicht vollständig konfiguriert (Service-Account oder gsheet_id fehlt).")
