@@ -1,7 +1,6 @@
 
 from __future__ import annotations
 from datetime import datetime
-import json
 import pandas as pd
 import streamlit as st
 
@@ -22,21 +21,21 @@ def get_gsheet_id():
         or st.secrets.get("gsheet", {}).get("id")
     )
 
-def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
-    """Entfernt NaN/NaT und ungeeignete Typen für gspread; konvertiert zu JSON-kompatiblen Werten."""
-    df = df.where(pd.notnull(df), None)  # NaN/NaT -> None
-    records = []
-    for row in df.to_dict(orient="records"):
-        clean = {}
-        for k, v in row.items():
-            if v is None:
-                clean[k] = None
-            elif isinstance(v, (int, float, str, bool)):
-                clean[k] = v
+def rows_for_gsheets(df: pd.DataFrame):
+    """Letzte Eskalation: ALLES als String senden (None/NaN -> ""), um 100% JSON-kompatibel zu sein."""
+    records = df.to_dict(orient="records")
+    rows = []
+    for r in records:
+        row = []
+        for col in df.columns:
+            v = r.get(col, None)
+            # NaN-Check ohne numpy import: NaN != NaN ist True
+            if v is None or (isinstance(v, float) and v != v):
+                row.append("")
             else:
-                clean[k] = str(v)  # Fallback
-        records.append(clean)
-    return pd.DataFrame(records, columns=df.columns)
+                row.append(str(v))
+        rows.append(row)
+    return rows
 
 GS_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -57,13 +56,11 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
             ws = sh.worksheet("responses")
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="100", cols="20")
-            ws.append_row(list(df.columns))
+            ws.append_row(list(df.columns), value_input_option="USER_ENTERED")
 
-        # Reihenfolge explizit anhand der Spalten, um NaN-Re-Introduktion zu vermeiden
-        records = df.to_dict(orient="records")
-        ordered = [[r.get(col, None) for col in df.columns] for r in records]
-
-        ws.append_rows(ordered)
+        # HART ABGESICHERT: Alles als Strings
+        rows = rows_for_gsheets(df)
+        ws.append_rows(rows, value_input_option="USER_ENTERED")
         return f"✅ Übertragung erfolgreich: {sh.title} → Tab 'responses'"
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
@@ -215,7 +212,6 @@ if consent and confirmation and hotel:
         Sie können diese Seite jetzt schließen.
         """)
         if not st.session_state.submitted:
-            # Wenn keine Geräteeinträge erfasst wurden, trotzdem eine (Meta-)Zeile senden
             if len(st.session_state.records) == 0:
                 st.session_state.records.append({
                     "geraet": "(keine Angaben)",
@@ -243,9 +239,6 @@ if consent and confirmation and hotel:
                 "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"
             ]
             df = df[cols]
-
-            # Robust bereinigen & geordnete Records erzeugen
-            df = sanitize_for_gsheets(df)
 
             if "gcp_service_account" in st.secrets and get_gsheet_id():
                 st.info(submit_to_gsheets(df))
