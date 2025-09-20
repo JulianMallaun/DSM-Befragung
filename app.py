@@ -32,7 +32,6 @@ def sanitize_for_gsheets(df: pd.DataFrame) -> pd.DataFrame:
             if v is None:
                 clean[k] = None
             elif isinstance(v, (int, float, str, bool)):
-                # float('nan') dürfte es hier dank None nicht mehr geben
                 clean[k] = v
             else:
                 clean[k] = str(v)  # Fallback
@@ -65,7 +64,7 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
         ordered = [[r.get(col, None) for col in df.columns] for r in records]
 
         ws.append_rows(ordered)
-        return f"✅ Erfolgreich an Google Sheets übertragen: {sh.title} (Tab: responses)."
+        return f"✅ Übertragung erfolgreich: {sh.title} → Tab 'responses'"
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
 
@@ -215,7 +214,18 @@ if consent and confirmation and hotel:
         Ihre Antworten wurden gespeichert und an den Studienautor übermittelt.  
         Sie können diese Seite jetzt schließen.
         """)
-        if not st.session_state.submitted and len(st.session_state.records) > 0:
+        if not st.session_state.submitted:
+            # Wenn keine Geräteeinträge erfasst wurden, trotzdem eine (Meta-)Zeile senden
+            if len(st.session_state.records) == 0:
+                st.session_state.records.append({
+                    "geraet": "(keine Angaben)",
+                    "vorhanden": None,
+                    "leistung_kw": None,
+                    "modulation": None,
+                    "dauer": None,
+                    "rebound": None,
+                    "betriebsfenster": None,
+                })
             df = pd.DataFrame(st.session_state.records)
             meta = {
                 "timestamp": datetime.utcnow().isoformat(),
@@ -234,24 +244,10 @@ if consent and confirmation and hotel:
             ]
             df = df[cols]
 
-            # 🔎 Debug-Tool (opt-in)
-            if st.checkbox("🔍 Debug: Zeige erste Zeilen vor Google Sheets Upload"):
-                st.dataframe(df.head(10))
-                try:
-                    json.dumps(df.to_dict(orient="records"))
-                    st.success("✅ Alle Werte JSON-kompatibel (json.dumps OK)")
-                except Exception as e:
-                    st.error(f"❌ JSON Fehler: {e}")
-                    st.json(df.to_dict(orient="records"))
-
             # Robust bereinigen & geordnete Records erzeugen
             df = sanitize_for_gsheets(df)
-            records = df.to_dict(orient="records")
-            ordered = [[r.get(col, None) for col in df.columns] for r in records]
 
             if "gcp_service_account" in st.secrets and get_gsheet_id():
-                # Übergabe an submit-Funktion mit dem bereinigten DataFrame
-                # (die Funktion generiert erneut ordered; doppelt hält besser)
                 st.info(submit_to_gsheets(df))
             else:
                 st.warning("Google Sheets ist nicht vollständig konfiguriert (Service-Account oder gsheet_id fehlt).")
