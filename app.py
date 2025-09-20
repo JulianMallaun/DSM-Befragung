@@ -154,7 +154,7 @@ def device_form(device_name: str):
         st.rerun()
 
     if saved:
-        st.session_state.index = min(len(CATALOG), st.session_state.index + 1)  # darf len(CATALOG) erreichen
+        st.session_state.index = min(len(CATALOG), st.session_state.index + 1)
         st.rerun()
 
 # --- Google Sheets Submission ---
@@ -164,7 +164,6 @@ GS_SCOPES = [
 ]
 
 def submit_to_gsheets(df: pd.DataFrame) -> str:
-    """Schreibt die Daten in das Google Sheet (Tab 'responses'). Gibt Status-Text zurück."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -175,7 +174,7 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
             ws = sh.worksheet("responses")
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="100", cols="20")
-            ws.append_row(list(df.columns))  # Header einmalig
+            ws.append_row(list(df.columns))
         ws.append_rows(df.values.tolist())
         return "✅ Die Daten wurden erfolgreich an Google Sheets übertragen (Tab: responses)."
     except Exception as e:
@@ -187,7 +186,6 @@ if consent and confirmation and hotel:
         labeled_divider(f"Frage {st.session_state.index + 1} von {len(CATALOG)}")
         device_form(CATALOG[st.session_state.index])
     else:
-        # Abschluss-Seite
         labeled_divider("Abschluss")
         st.success("🎉 Vielen Dank für Ihre Teilnahme!")
         st.markdown("""
@@ -196,7 +194,6 @@ if consent and confirmation and hotel:
         Sie können diese Seite jetzt schließen.
         """)
 
-        # Einmalige Übertragung an Google Sheets (kein Excel-Download)
         if not st.session_state.submitted and len(st.session_state.records) > 0:
             export_df = pd.DataFrame(st.session_state.records)
             meta = {
@@ -224,5 +221,26 @@ if consent and confirmation and hotel:
             st.session_state.submitted = True
 else:
     st.warning("Bitte Einwilligung, Stammdaten (Hotel) und Abschluss-Bestätigung setzen, um zu starten.")
+
+# --- Diagnose-Block ---
+with st.expander("Diagnose: Google-Anbindung testen", expanded=False):
+    if st.button("Google-Anbindung testen"):
+        try:
+            import gspread
+            from google.oauth2.service_account import Credentials
+            creds = Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"],
+                scopes=GS_SCOPES
+            )
+            client = gspread.authorize(creds)
+            sh = client.open_by_key(st.secrets["gsheet_id"])
+            st.success(f"Verbunden mit Spreadsheet: {sh.title}")
+            try:
+                ws = sh.worksheet("responses")
+                st.info("Tab 'responses' gefunden.")
+            except Exception:
+                st.warning("Tab 'responses' fehlt – wird bei der ersten Übertragung angelegt.")
+        except Exception as e:
+            st.error(f"Fehler: {e}")
 
 st.caption("© Masterarbeit – Intelligente Energiesysteme | Es werden nur für die Erhebung notwendige Daten gespeichert.")
