@@ -9,10 +9,25 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 st.markdown(
     """
     <style>
-    .crit-block {padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 14px; margin-bottom: 12px; background: #fafafa;}
-    .crit-title {font-size: 1.05rem; font-weight: 700; margin-bottom: 2px;}
-    .crit-help {font-size: 0.9rem; color: #6b7280; margin-top: 0; margin-bottom: 8px;}
-    .section-counter {font-size: 0.9rem; color: #6b7280;}
+    /* Schlanke, blaue Abtrennung links je Kriterium */
+    .crit-block { 
+        border-left: 4px solid #0f766e; 
+        padding: 6px 12px; 
+        margin: 8px 0 16px 0; 
+        background: transparent;
+        border-radius: 8px;
+    }
+    .crit-title { 
+        font-size: 1.1rem; 
+        font-weight: 600; 
+        margin-bottom: 2px; 
+        color: #0f172a;
+    }
+    .crit-help { 
+        font-size: 0.85rem; 
+        color: #6b7280; 
+        margin-bottom: 6px; 
+    }
     </style>
     """, unsafe_allow_html=True,
 )
@@ -232,7 +247,7 @@ def device_form(section: str, device_name: str):
 if st.session_state.started:
     total = len(st.session_state.flat_catalog)
     if st.session_state.index < total:
-        st.markdown(f'<div class="section-counter">Frage {st.session_state.index + 1} von {total}</div>', unsafe_allow_html=True)
+        # Satz/Untertitel unter Überschrift wurde entfernt (keine section-counter Ausgabe mehr)
         section, device = st.session_state.flat_catalog[st.session_state.index]
         device_form(section, device)
     else:
