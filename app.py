@@ -26,7 +26,6 @@ def labeled_divider(label: str):
     st.markdown(f"---\n###### {label}")
 
 def get_gsheet_id():
-    # robust: akzeptiert gsheet_id auf Top-Level ODER innerhalb gcp_service_account bzw. gsheet.id
     return (
         st.secrets.get("gsheet_id")
         or st.secrets.get("gcp_service_account", {}).get("gsheet_id")
@@ -34,14 +33,12 @@ def get_gsheet_id():
     )
 
 def rows_for_gsheets(df: pd.DataFrame):
-    """Alles als String senden (None/NaN -> ""), damit 100% JSON-kompatibel."""
     records = df.to_dict(orient="records")
     rows = []
     for r in records:
         row = []
         for col in df.columns:
             v = r.get(col, None)
-            # NaN-Check ohne numpy: NaN != NaN ist True
             if v is None or (isinstance(v, float) and v != v):
                 row.append("")
             else:
@@ -92,7 +89,7 @@ K2_OPTS = ["1 – <15 min","2 – 15–45 min","3 – 45–120 min","4 – ≥2 
 K3_OPTS = ["1 – sehr viel Extraenergie","2 – viel Extraenergie","3 – wenig Extraenergie","4 – kaum Extraenergie"]
 K4_OPTS = ["1 – feste Zeiten","2 – eingeschränkt flexibel","3 – eher flexibel","4 – völlig flexibel"]
 
-# ----------------- Gerätekatalog mit Abschnittsüberschriften (Kühlzentrale entfernt) -----------------
+# ----------------- Gerätekatalog -----------------
 CATALOG = {
     "A) Küche": [
         "Kühlhaus",
@@ -121,7 +118,7 @@ CATALOG = {
 if "index" not in st.session_state:
     st.session_state.index = 0
 if "started" not in st.session_state:
-    st.session_state.started = False  # Einleitung/Stammdaten werden nur vor Start angezeigt
+    st.session_state.started = False
 if "flat_catalog" not in st.session_state:
     flat = []
     for section, devices in CATALOG.items():
@@ -141,7 +138,7 @@ if not st.session_state.started:
     Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
     **Geschätzte Dauer:** ~15 Minuten.
     """)
-    consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", value=False)
+    consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", value=False, key="consent")
     labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -156,7 +153,7 @@ if not st.session_state.started:
 
     start = st.button("Start – zur ersten Frage →", type="primary", use_container_width=True)
     if start:
-        if not consent:
+        if not st.session_state.consent:
             st.error("Bitte Einverständniserklärung bestätigen.")
         elif not st.session_state.confirm:
             st.error("Bitte die Abschluss-Bestätigung setzen.")
@@ -164,11 +161,10 @@ if not st.session_state.started:
             st.error("Bitte Hotel angeben (Pflichtfeld).")
         else:
             st.session_state.started = True
-            st.experimental_rerun()
+            st.rerun()  # FIX: ersetzt st.experimental_rerun()
 
 # ----------------- Formular pro Gerät -----------------
 def device_form(section: str, device_name: str):
-    # Abschnittsüberschrift
     st.header(section)
     st.subheader(device_name)
 
@@ -203,13 +199,13 @@ def device_form(section: str, device_name: str):
             "rebound": choice_to_int(k3) if vorhanden else None,
             "betriebsfenster": choice_to_int(k4) if vorhanden else None,
         }
-        st.session_state.records = [r for r in st.session_state.records if r["geraet"] == device_name and r.get("section")==section and False] + [r for r in st.session_state.records if not (r["geraet"]==device_name and r.get("section")==section)]
+        st.session_state.records = [r for r in st.session_state.records if not (r.get("section")==section and r["geraet"]==device_name)]
         st.session_state.records.append(rec)
         saved = True
         st.success("Antwort gespeichert.")
 
     if skip:
-        st.session_state.records = [r for r in st.session_state.records if not (r["geraet"]==device_name and r.get("section")==section)]
+        st.session_state.records = [r for r in st.session_state.records if not (r.get("section")==section and r["geraet"]==device_name)]
         saved = True
 
     if back:
@@ -244,7 +240,6 @@ if st.session_state.started:
                     "betriebsfenster": None,
                 })
             df = pd.DataFrame(st.session_state.records)
-            # Meta aus Session
             meta = {
                 "timestamp": datetime.utcnow().isoformat(),
                 "hotel": st.session_state.hotel,
