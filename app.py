@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 from datetime import datetime
 import pandas as pd
@@ -7,9 +8,8 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 
 # ----------------- Global Styles -----------------
 st.markdown(
-    """
+    '''
     <style>
-    /* Breiterer blauer Trennstrich links je Kriterium */
     .crit-block { 
         border-left: 6px solid #0f766e; 
         padding: 6px 12px; 
@@ -29,11 +29,11 @@ st.markdown(
         margin-bottom: 6px; 
     }
     </style>
-    """, unsafe_allow_html=True,
+    ''',
+    unsafe_allow_html=True,
 )
 
 st.title("Befragung Lastflexibilität – Hotel")
-# (gewünscht) Untertitel / Caption entfernt
 
 # ----------------- Helpers -----------------
 def labeled_divider(label: str):
@@ -99,7 +99,6 @@ def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
 
 def sget(key: str, default: str = ""):
-    # sichere Session-Abfrage: vermeidet AttributeError am Ende
     return st.session_state[key] if key in st.session_state else default
 
 # ----------------- Kriterien-Optionen -----------------
@@ -151,24 +150,28 @@ if "submitted" not in st.session_state:
 
 # ----------------- Intro & Stammdaten (nur vor Start sichtbar) -----------------
 if not st.session_state.started:
-    st.markdown("""
-    **Einleitung**  
-    Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
-    Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
-    **Geschätzte Dauer:** ~15 Minuten.
-    """)
+    st.markdown(
+        '''
+        **Einleitung**  
+        Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
+        Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
+        **Geschätzte Dauer:** ~15 Minuten.
+        '''
+    )
 
-    st.markdown("""
-    ### Einverständniserklärung
-    Mit der Teilnahme an dieser Befragung erklären Sie sich einverstanden, dass:
+    st.markdown(
+        '''
+        ### Einverständniserklärung
+        Mit der Teilnahme an dieser Befragung erklären Sie sich einverstanden, dass:
 
-    - Ihre Teilnahme freiwillig erfolgt und Sie den Fragebogen jederzeit abbrechen können, ohne dass Ihnen dadurch Nachteile entstehen.  
-    - Ihre Angaben ausschließlich zu wissenschaftlichen Zwecken im Rahmen einer Masterarbeit an der FH Burgenland verwendet werden.  
-    - Ihre Daten anonymisiert erhoben und ausgewertet werden, sodass keine Rückschlüsse auf einzelne Personen oder Betriebe möglich sind.  
-    - Die Ergebnisse ausschließlich von berechtigten Personen (z. B. Betreuerinnen, Gutachterinnen) eingesehen werden.  
+        - Ihre Teilnahme freiwillig erfolgt und Sie den Fragebogen jederzeit abbrechen können, ohne dass Ihnen dadurch Nachteile entstehen.  
+        - Ihre Angaben ausschließlich zu wissenschaftlichen Zwecken im Rahmen einer Masterarbeit an der FH Burgenland verwendet werden.  
+        - Ihre Daten anonymisiert erhoben und ausgewertet werden, sodass keine Rückschlüsse auf einzelne Personen oder Betriebe möglich sind.  
+        - Die Ergebnisse ausschließlich von berechtigten Personen (z. B. Betreuerinnen, Gutachterinnen) eingesehen werden.  
 
-    **Mit dem Ausfüllen und Absenden des Fragebogens geben Sie Ihre Zustimmung zur Teilnahme.**
-    """)
+        **Mit dem Ausfüllen und Absenden des Fragebogens geben Sie Ihre Zustimmung zur Teilnahme.**
+        '''
+    )
 
     consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilnahme einverstanden.", value=False, key="consent")
     labeled_divider("Stammdaten")
@@ -183,6 +186,13 @@ if not st.session_state.started:
     name = st.text_input("Name (optional)", key="teilnehmername")
     confirmation = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
 
+    # Mirror to session (fix)
+    st.session_state.hotel = hotel
+    st.session_state.bereich = bereich
+    st.session_state.position = position
+    st.session_state.teilnehmername = name
+    st.session_state.datum = survey_date
+
     start = st.button("Start – zur ersten Frage →", type="primary", use_container_width=True)
     if start:
         if not st.session_state.consent:
@@ -190,7 +200,7 @@ if not st.session_state.started:
         elif not st.session_state.confirm:
             st.error("Bitte die Abschluss-Bestätigung setzen.")
         elif not st.session_state.hotel:
-            st.error("Bitte Hotel angeben (Pflichtfeld)." )
+            st.error("Bitte Hotel angeben (Pflichtfeld).")
         else:
             st.session_state.started = True
             st.rerun()
@@ -206,7 +216,6 @@ def device_form(section: str, device_name: str):
     with colB:
         leistung = st.number_input("Leistung (kW, optional)", min_value=0.0, step=0.1, key=f"kw_{device_name}", disabled=not vorhanden)
 
-    # Hilfe-Text bei Leistung anpassen entfernt (dein Wunsch) → helptext=None
     k1 = criterion_block("Leistung anpassen", None, K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
     k2 = criterion_block("Nutzungsdauer anpassbar", "wie lange drosselbar?", K2_OPTS, key=f"k2_{device_name}", disabled=not vorhanden)
     k3 = criterion_block("Energie-Nachholen", "braucht viel Extraenergie nach Drosselung?", K3_OPTS, key=f"k3_{device_name}", disabled=not vorhanden)
@@ -279,7 +288,7 @@ if st.session_state.started:
                 "position": sget("position"),
                 "datum": str(sget("datum")),
                 "teilnehmername": sget("teilnehmername"),
-                "survey_version": "2025-09-sections-ui-hotfix",
+                "survey_version": "2025-09-sections-statefix",
             }
             for k, v in meta.items():
                 df[k] = v
