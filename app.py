@@ -5,12 +5,23 @@ import streamlit as st
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
-st.title("Befragung Lastflexibilität – Hotel")
-st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Vereinfachte Version mit Word-Bezeichnungen")
+# ----------------- Global Styles -----------------
+st.markdown(
+    """
+    <style>
+    .crit-block {padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 14px; margin-bottom: 12px; background: #fafafa;}
+    .crit-title {font-size: 1.05rem; font-weight: 700; margin-bottom: 2px;}
+    .crit-help {font-size: 0.9rem; color: #6b7280; margin-top: 0; margin-bottom: 8px;}
+    .section-counter {font-size: 0.9rem; color: #6b7280;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# -------------------------------------------------
-# Helpers
-# -------------------------------------------------
+st.title("Befragung Lastflexibilität – Hotel")
+st.caption("Masterarbeit – Intelligente Energiesysteme | Online-Erhebung (mobil & Desktop) – Präzisierte Version")
+
+# ----------------- Helpers -----------------
 def labeled_divider(label: str):
     st.markdown(f"---\n###### {label}")
 
@@ -64,9 +75,7 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
     except Exception as e:
         return f"⚠️ Fehler bei Google Sheets Übertragung: {e}"
 
-# -------------------------------------------------
-# Einleitung & Consent
-# -------------------------------------------------
+# ----------------- Intro & Consent -----------------
 st.markdown("""
 **Einleitung**  
 Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
@@ -78,9 +87,7 @@ consent = st.checkbox("Ich habe die Informationen gelesen und bin mit der Teilna
 if not consent:
     st.info("Bitte Einverständniserklärung bestätigen.")
 
-# -------------------------------------------------
-# Stammdaten
-# -------------------------------------------------
+# ----------------- Stammdaten -----------------
 labeled_divider("Stammdaten")
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -93,23 +100,43 @@ survey_date = st.date_input("Datum", value=datetime.today())
 name = st.text_input("Name (optional)")
 confirmation = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.")
 
-# -------------------------------------------------
-# Kriterien (Bezeichnungen exakt wie im Word-Dokument)
-#  Skala: 1 = kaum möglich, 2 = etwas möglich, 3 = gut möglich, 4 = sehr gut möglich
-#  Mapping der internen Spalten bleibt wie gehabt:
-#   modulation        -> Leistung anpassen
-#   dauer             -> Nutzungsdauer anpassbar
-#   rebound           -> Energie-Nachholen
-#   betriebsfenster   -> Zeitliche Flexibilität
-# -------------------------------------------------
-SCALE_OPTS = ["1 – kaum möglich", "2 – etwas möglich", "3 – gut möglich", "4 – sehr gut möglich"]
+# ----------------- Kriterien (präzise Labels & Optionen) -----------------
+# 1) Leistung anpassen – 1–4: kaum/etwas/gut/sehr gut
+K1_OPTS = [
+    "1 – kaum anpassbar",
+    "2 – etwas anpassbar",
+    "3 – gut anpassbar",
+    "4 – sehr gut anpassbar",
+]
+
+# 2) Nutzungsdauer anpassbar – <15, 15–45, 45–120, ≥2h
+K2_OPTS = [
+    "1 – <15 min",
+    "2 – 15–45 min",
+    "3 – 45–120 min",
+    "4 – ≥2 h",
+]
+
+# 3) Energie-Nachholen – sehr viel, viel, wenig, kaum
+K3_OPTS = [
+    "1 – sehr viel Extraenergie",
+    "2 – viel Extraenergie",
+    "3 – wenig Extraenergie",
+    "4 – kaum Extraenergie",
+]
+
+# 4) Zeitliche Flexibilität – feste Zeiten, eingeschränkt, eher flexibel, völlig flexibel
+K4_OPTS = [
+    "1 – feste Zeiten",
+    "2 – eingeschränkt flexibel",
+    "3 – eher flexibel",
+    "4 – völlig flexibel",
+]
 
 def choice_to_int(txt: str) -> int:
     return int(str(txt).split("–")[0].strip()) if txt else None
 
-# -------------------------------------------------
-# Vereinfachter Katalog
-# -------------------------------------------------
+# ----------------- Gerätekatalog (präzisierte Version) -----------------
 CATALOG = {
     "A) Küche": [
         "Kühlhaus",
@@ -135,9 +162,7 @@ CATALOG = {
     ],
 }
 
-# -------------------------------------------------
-# Session
-# -------------------------------------------------
+# ----------------- Session -----------------
 if "index" not in st.session_state:
     st.session_state.index = 0
 if "flat_catalog" not in st.session_state:
@@ -147,36 +172,29 @@ if "records" not in st.session_state:
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
-# -------------------------------------------------
-# Formular für ein Gerät
-# -------------------------------------------------
+# ----------------- Formular pro Gerät -----------------
+def criterion_block(title: str, helptext: str, options: list, key: str, disabled: bool):
+    st.markdown('<div class="crit-block">', unsafe_allow_html=True)
+    st.markdown(f'<div class="crit-title">{title}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="crit-help">{helptext}</div>', unsafe_allow_html=True)
+    # horizontal: klar sichtbar, zugehörig zum Titel
+    value = st.radio("", options, key=key, disabled=disabled, horizontal=True, label_visibility="collapsed")
+    st.markdown('</div>', unsafe_allow_html=True)
+    return value
+
 def device_form(device_name: str):
     st.subheader(device_name)
+
     colA, colB = st.columns([1,1])
     with colA:
         vorhanden = st.checkbox("Vorhanden", key=f"vh_{device_name}")
     with colB:
         leistung = st.number_input("Leistung (kW, optional)", min_value=0.0, step=0.1, key=f"kw_{device_name}", disabled=not vorhanden)
 
-    # 1) Leistung anpassen
-    st.markdown("**Leistung anpassen**")
-    st.caption("stufenlos oder nur ein/aus?")
-    k1 = st.radio(" ", SCALE_OPTS, key=f"k1_{device_name}", disabled=not vorhanden, horizontal=True)
-
-    # 2) Nutzungsdauer anpassbar
-    st.markdown("**Nutzungsdauer anpassbar**")
-    st.caption("wie lange drosselbar?")
-    k2 = st.radio("  ", SCALE_OPTS, key=f"k2_{device_name}", disabled=not vorhanden, horizontal=True)
-
-    # 3) Energie-Nachholen
-    st.markdown("**Energie-Nachholen**")
-    st.caption("braucht viel Extraenergie nach Drosselung?")
-    k3 = st.radio("   ", SCALE_OPTS, key=f"k3_{device_name}", disabled=not vorhanden, horizontal=True)
-
-    # 4) Zeitliche Flexibilität
-    st.markdown("**Zeitliche Flexibilität**")
-    st.caption("fixe Zeiten oder frei?")
-    k4  = st.radio("    ", SCALE_OPTS, key=f"k4_{device_name}", disabled=not vorhanden, horizontal=True)
+    k1 = criterion_block("Leistung anpassen", "stufenlos oder nur ein/aus?", K1_OPTS, key=f"k1_{device_name}", disabled=not vorhanden)
+    k2 = criterion_block("Nutzungsdauer anpassbar", "wie lange drosselbar?", K2_OPTS, key=f"k2_{device_name}", disabled=not vorhanden)
+    k3 = criterion_block("Energie-Nachholen", "braucht viel Extraenergie nach Drosselung?", K3_OPTS, key=f"k3_{device_name}", disabled=not vorhanden)
+    k4 = criterion_block("Zeitliche Flexibilität", "fixe Zeiten oder frei?", K4_OPTS, key=f"k4_{device_name}", disabled=not vorhanden)
 
     cols_btn = st.columns([1,1,1])
     with cols_btn[0]:
@@ -192,7 +210,7 @@ def device_form(device_name: str):
             "geraet": device_name,
             "vorhanden": bool(vorhanden),
             "leistung_kw": float(leistung) if vorhanden else 0.0,
-            # interne Spalten bleiben stabil für dein Sheet:
+            # interne Spalten stabil halten
             "modulation": choice_to_int(k1) if vorhanden else None,
             "dauer": choice_to_int(k2) if vorhanden else None,
             "rebound": choice_to_int(k3) if vorhanden else None,
@@ -215,13 +233,11 @@ def device_form(device_name: str):
         st.session_state.index = min(len(st.session_state.flat_catalog), st.session_state.index + 1)
         st.rerun()
 
-# -------------------------------------------------
-# Flow
-# -------------------------------------------------
+# ----------------- Flow -----------------
 if consent and confirmation and hotel:
-    if st.session_state.index < len(st.session_state.flat_catalog):
-        total = len(st.session_state.flat_catalog)
-        labeled_divider(f"Frage {st.session_state.index + 1} von {total}")
+    total = len(st.session_state.flat_catalog)
+    if st.session_state.index < total:
+        st.markdown(f'<div class="section-counter">Frage {st.session_state.index + 1} von {total}</div>', unsafe_allow_html=True)
         device_form(st.session_state.flat_catalog[st.session_state.index])
     else:
         labeled_divider("Abschluss")
@@ -246,7 +262,7 @@ if consent and confirmation and hotel:
                 "position": position,
                 "datum": str(survey_date),
                 "teilnehmername": name,
-                "survey_version": "2025-09-simplified-wordlabels",
+                "survey_version": "2025-09-precise",
             }
             for k, v in meta.items():
                 df[k] = v
