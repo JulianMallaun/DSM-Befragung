@@ -22,18 +22,26 @@ ACCENTS_RGB = {
     "Teal":    "15, 118, 110",  # #0f766e
 }
 accent_rgb = ACCENTS_RGB[accent_choice]
-primary_rgb = "14, 165, 233"   # #0ea5e9 (Kasten)
 
 # =================== Styles ===================
 STYLE = f"""
 <style>
-:root {{ --accent-rgb: {accent_rgb}; --primary-rgb: {primary_rgb}; }}
-html, body, [class^='css'] {{ color: #0f172a; }}
+:root {{
+  --accent-rgb: {accent_rgb};
+  --text-light: #0f172a;
+  --muted-light: #334155;
+  --text-dark: #e5e7eb;
+  --muted-dark: #cbd5e1;
+  --primary-light-rgb: 14,165,233;   /* Box-Hintergrund (helles Schema) */
+  --primary-dark-rgb: 56,189,248;    /* Box-Hintergrund (dunkles Schema) */
+}}
+
+html, body, [class^='css'] {{ color: var(--text-light); }}
 
 /* ---- Consent/Confirm: transparenter Kasten ---- */
 [data-testid="stVerticalBlockBorderWrapper"] {{
   border: none !important;
-  background: rgba(var(--primary-rgb), .18) !important;
+  background: rgba(var(--primary-light-rgb), .18) !important;
   border-radius: 14px !important;
   overflow: hidden !important;
 }}
@@ -46,10 +54,13 @@ html, body, [class^='css'] {{ color: #0f172a; }}
 hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
 .block-container hr {{ display: none !important; }}
 
-/* ---- Kriterienblöcke: ohne Linie ---- */
+/* ---- Kriterienblöcke ---- */
 .crit-block {{ border-top: none !important; padding-top: 6px; margin-top: 8px; }}
-.crit-title {{ font-weight: 700; margin-bottom: 2px; }}
-.crit-help {{ font-size: .95rem; margin-bottom: 6px; color:#111827; }}
+.crit-title {{ font-weight: 700; margin-bottom: 2px; color: var(--text-light); }}
+.crit-help {{ font-size: .98rem; line-height: 1.35; margin-bottom: 8px; color: var(--muted-light); }}
+
+/* ---- Radiogroup Labels Lesbarkeit ---- */
+div[role='radiogroup'] label span {{ color: var(--muted-light) !important; }}
 
 /* ---- Einziger Trennstreifen ---- */
 .separator {{
@@ -62,15 +73,33 @@ hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
 
 /* ==== Gerätekopf ==== */
 .device-title {{
-  font-size: 1.2rem;          /* größer */
+  font-size: 1.2rem;
   font-weight: 800;
   margin: 6px 0 2px;
-  color: rgb(var(--accent-rgb)); /* Akzentfarbe */
+  color: rgb(var(--accent-rgb));
 }}
 .device-section {{
   font-size: .94rem;
   color: #475569;
   margin-bottom: 8px;
+}}
+
+/* ===== Dark Mode / Smartphone Lesbarkeit ===== */
+@media (prefers-color-scheme: dark) {{
+  html, body, [class^='css'] {{ color: var(--text-dark); }}
+  .crit-title {{ color: var(--text-dark); }}
+  .crit-help {{ color: rgba(255,255,255,.82); }}
+  div[role='radiogroup'] label span {{ color: rgba(255,255,255,.82) !important; }}
+  .device-section {{ color: rgba(255,255,255,.65); }}
+  [data-testid="stVerticalBlockBorderWrapper"] {{
+    background: rgba(var(--primary-dark-rgb), .20) !important;
+  }}
+}}
+
+/* ===== Mobile Tweaks ===== */
+@media (max-width: 480px) {{
+  .crit-help {{ font-size: 1rem; line-height: 1.45; }}
+  .device-title {{ font-size: 1.25rem; }}
 }}
 </style>
 """
@@ -208,7 +237,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v15"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v16"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
