@@ -23,58 +23,47 @@ ACCENTS = {
 }
 
 accent_600 = ACCENTS[accent_choice]["600"]
-accent_100 = ACCENTS[accent_choice]["100"]
-primary_600 = "#0ea5e9"  # Consent-Boxen: Blau
-primary_100 = "#f0f9ff"
 
 # =================== Styles ===================
 STYLE = f"""
 <style>
-:root {{
-  --accent-600: {accent_600};
-  --accent-100: {accent_100};
-  --primary-600: {primary_600};
-  --primary-100: {primary_100};
-  --surface: #f8fafc;
-  --card: #ffffff;
-  --text: #0f172a;
-  --subtle: #475569;
-  --border: #e2e8f0;
-}}
+:root {{ --accent-600: {accent_600}; }}
 
-html, body, [class^="css"] {{ color: var(--text); }}
+html, body, [class^="css"] {{ color: #0f172a; }}
 
-/* Eigene Box für Consent/Confirm */
+/* Optische Box mit transparentem Blau-Hintergrund */
 .custom-box {{
-  background: color-mix(in oklab, var(--primary-600) 15%, transparent);
+  background: color-mix(in oklab, var(--accent-600) 16%, transparent);
   border-radius: 14px;
-  padding: 16px;
-  margin: 14px 0;
+  padding: 16px 16px 22px 16px; /* extra Bottom-Padding für Checkbox */
+  margin: 14px 0 8px 0;
 }}
+/* Checkbox optisch in die Box ziehen */
+.after-box {{ margin-top: -22px; padding-left: 10px; }}
 
-/* Gerätekarte nur mit Top-Balken */
+/* Gerätekarte nur mit Top-Balken – ohne Rand & ohne Schatten (kein Doppel-Effekt) */
 .device-card {{
   position: relative;
-  background: var(--card);
+  background: #ffffff;
   padding: 14px 16px 14px 16px;
   border-radius: 14px;
-  margin: 20px 0;
-  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+  margin: 22px 0;
   border: none;
+  box-shadow: none;
 }}
 .device-card::before {{
   content: "";
   position: absolute;
   left: 0; right: 0; top: 0; height: 6px;
-  background: color-mix(in oklab, var(--accent-600) 25%, transparent);
+  background: color-mix(in oklab, var(--accent-600) 26%, transparent);
   border-top-left-radius: 14px; border-top-right-radius: 14px;
 }}
 
 .device-title {{ font-size: 1.12rem; font-weight: 800; margin: 8px 0 2px; }}
-.device-section {{ font-size: .94rem; color: var(--subtle); margin-bottom: 8px; }}
+.device-section {{ font-size: .94rem; color: #475569; margin-bottom: 8px; }}
 
 /* Kriterienblock */
-.crit-block {{ border-top: 1px solid var(--border); padding-top: 10px; margin-top: 12px; }}
+.crit-block {{ border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 12px; }}
 .crit-title {{ font-weight: 700; margin-bottom: 2px; }}
 .crit-help {{ font-size: .95rem; margin-bottom: 6px; }}
 </style>
@@ -158,7 +147,7 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
 
-    # Blaue Box mit Hintergrund
+    # Visueller Kasten (transparentes Blau) + Checkbox optisch hineingezogen
     st.markdown('<div class="custom-box">', unsafe_allow_html=True)
     st.markdown(
         """
@@ -168,6 +157,8 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 - Einsicht nur für berechtigte Personen.
         """.strip()
     )
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="after-box">', unsafe_allow_html=True)
     consent = st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -179,6 +170,8 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.text_input("Name (optional)", key="teilnehmername")
 
     st.markdown('<div class="custom-box">', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="after-box">', unsafe_allow_html=True)
     confirm = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -219,7 +212,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v11"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v12"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
