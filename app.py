@@ -11,7 +11,7 @@ accent_choice = st.sidebar.selectbox(
     "Akzentfarbe",
     ["Blau", "Smaragd", "Violett", "Orange", "Teal"],
     index=0,
-    help="Wähle die Akzentfarbe für Trennstreifen."
+    help="Wähle die Akzentfarbe für Trennstreifen und Gerätekopfzeilen."
 )
 
 ACCENTS_RGB = {
@@ -30,7 +30,7 @@ STYLE = f"""
 :root {{ --accent-rgb: {accent_rgb}; --primary-rgb: {primary_rgb}; }}
 html, body, [class^='css'] {{ color: #0f172a; }}
 
-/* ---- Consent/Confirm: robuster transparenter Kasten ---- */
+/* ---- Consent/Confirm: transparenter Kasten ---- */
 [data-testid="stVerticalBlockBorderWrapper"] {{
   border: none !important;
   background: rgba(var(--primary-rgb), .18) !important;
@@ -46,7 +46,7 @@ html, body, [class^='css'] {{ color: #0f172a; }}
 hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
 .block-container hr {{ display: none !important; }}
 
-/* ---- Kriterienblöcke: keine Linie ---- */
+/* ---- Kriterienblöcke: ohne Linie ---- */
 .crit-block {{ border-top: none !important; padding-top: 6px; margin-top: 8px; }}
 .crit-title {{ font-weight: 700; margin-bottom: 2px; }}
 .crit-help {{ font-size: .95rem; margin-bottom: 6px; color:#111827; }}
@@ -60,10 +60,18 @@ hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
   margin: 18px 0 12px 0;
 }}
 
-/* Gerätesektion-Header */
-h2.section {{ font-size: 1.35rem; margin: 10px 0 6px 0; }}
-.device-title {{ font-size: 1.08rem; font-weight: 800; margin: 6px 0 2px; }}
-.device-section {{ font-size: .94rem; color: #475569; margin-bottom: 8px; }}
+/* ==== Gerätekopf ==== */
+.device-title {{
+  font-size: 1.2rem;          /* größer */
+  font-weight: 800;
+  margin: 6px 0 2px;
+  color: rgb(var(--accent-rgb)); /* Akzentfarbe */
+}}
+.device-section {{
+  font-size: .94rem;
+  color: #475569;
+  margin-bottom: 8px;
+}}
 </style>
 """
 st.markdown(STYLE, unsafe_allow_html=True)
@@ -200,7 +208,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v14"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v15"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]

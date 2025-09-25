@@ -1,8 +1,8 @@
-# DSM Befragungs-App (Hotel) – v14 (Mobile First)
+# DSM Befragungs-App (Hotel) – v15
 
-- Alle Standard-Trennlinien entfernt.
-- Einziger Separator: schmaler, farbiger Streifen zwischen den Geräten.
-- Consent-/Confirm-Boxen: transparenter blauer Hintergrund, Text + Checkbox im selben Container.
+- **Gerätenamen** größer (1.2rem) und in **Akzentfarbe**.
+- Mobile-first: nur der **farbige Separator** zwischen Geräten; alle Standard-Trennlinien entfernt.
+- Consent-/Confirm-Boxen mit **transparent-blauem Hintergrund**, Text + Checkbox im selben Container.
 
 ## Start
 ```bash
