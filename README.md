@@ -1,7 +1,7 @@
-# DSM Befragungs-App (Hotel) – v9
+# DSM Befragungs-App (Hotel) – v10
 
-- **Checkbox + Erklärungstext im selben Rahmen** mittels `st.container(border=True)` (funktioniert ohne CSS-Hacks).
-- Geräteabtrennung: **schmälerer, vollflächiger, transparenter Top-Balken** auf jeder Karte.
+- Consent-Boxen: Innenhintergrund in **transparentem Blau**, ohne äußeren Rahmen.
+- Geräte-Karten: Nur ein **oberer transparenter Balken** als Abtrennung, kein zusätzlicher Rahmen mehr.
 - Akzentfarbe in der Sidebar wählbar.
 
 ## Start

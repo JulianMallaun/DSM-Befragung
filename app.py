@@ -44,32 +44,29 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Container mit Border (Streamlit 1.37+) in blau einfärben */
+/* Container mit Innenhintergrund in transparentem Blau */
 [data-testid="stVerticalBlockBorderWrapper"] {{
-  border: 2px solid var(--primary-600) !important;
-  background: var(--primary-100) !important;
+  border: none !important;
+  background: color-mix(in oklab, var(--primary-600) 15%, transparent) !important;
   border-radius: 14px !important;
-}}
-/* Innenabstand für den Inhalt im Border-Container erhöhen */
-[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
-  padding: 12px 14px !important;
+  padding: 14px !important;
 }}
 
-/* Gerätekarte mit schmälerem, vollflächigem, transparenten Top-Balken */
+/* Gerätekarte mit nur Top-Balken (kein extra Rahmen) */
 .device-card {{
   position: relative;
   background: var(--card);
   padding: 14px 16px 14px 16px;
   border-radius: 14px;
   margin: 18px 0;
-  border: 1px solid var(--border);
   box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 6px 16px rgba(0,0,0,.06);
+  border: none; /* kein äußerer Rahmen */
 }}
 .device-card::before {{
   content: "";
   position: absolute;
-  left: 0; right: 0; top: 0; height: 6px; /* schmälerer Balken */
-  background: color-mix(in oklab, var(--accent-600) 22%, transparent); /* transparentes Blau */
+  left: 0; right: 0; top: 0; height: 6px;
+  background: color-mix(in oklab, var(--accent-600) 25%, transparent);
   border-top-left-radius: 14px; border-top-right-radius: 14px;
 }}
 
@@ -161,7 +158,7 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
 
-    # Blaue Box mit Border=True -> enthält Liste + Checkbox wirklich im selben Container
+    # Blaue Box mit Hintergrund in transparentem Blau
     with st.container(border=True):
         st.markdown(
             """
@@ -220,7 +217,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v9"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v10"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
