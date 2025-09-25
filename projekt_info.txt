@@ -1,0 +1,3 @@
+- Projekt: Masterarbeit – DSM im Hotel/Tourismus (Lastflexibilität)
+- Umsetzung: Online-Fragebogen mit Streamlit
+- Speicherung ausschließlich in Google Sheets
