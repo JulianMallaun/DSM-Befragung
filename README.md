@@ -1,7 +1,7 @@
-# DSM Befragungs-App (Hotel) – v10
+# DSM Befragungs-App (Hotel) – v11
 
-- Consent-Boxen: Innenhintergrund in **transparentem Blau**, ohne äußeren Rahmen.
-- Geräte-Karten: Nur ein **oberer transparenter Balken** als Abtrennung, kein zusätzlicher Rahmen mehr.
+- Consent- und Bestätigungs-Boxen: **komplett im transparent-blauen Hintergrund**, ohne Rahmen, mit Checkbox + Text zusammen.
+- Geräte-Karten: **nur noch ein oberer transparenter Balken** als Trennung, kein doppelter Rahmen mehr.
 - Akzentfarbe in der Sidebar wählbar.
 
 ## Start

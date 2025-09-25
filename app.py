@@ -44,23 +44,23 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Container mit Innenhintergrund in transparentem Blau */
-[data-testid="stVerticalBlockBorderWrapper"] {{
-  border: none !important;
-  background: color-mix(in oklab, var(--primary-600) 15%, transparent) !important;
-  border-radius: 14px !important;
-  padding: 14px !important;
+/* Eigene Box für Consent/Confirm */
+.custom-box {{
+  background: color-mix(in oklab, var(--primary-600) 15%, transparent);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 14px 0;
 }}
 
-/* Gerätekarte mit nur Top-Balken (kein extra Rahmen) */
+/* Gerätekarte nur mit Top-Balken */
 .device-card {{
   position: relative;
   background: var(--card);
   padding: 14px 16px 14px 16px;
   border-radius: 14px;
-  margin: 18px 0;
-  box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 6px 16px rgba(0,0,0,.06);
-  border: none; /* kein äußerer Rahmen */
+  margin: 20px 0;
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+  border: none;
 }}
 .device-card::before {{
   content: "";
@@ -158,17 +158,18 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
 
-    # Blaue Box mit Hintergrund in transparentem Blau
-    with st.container(border=True):
-        st.markdown(
-            """
+    # Blaue Box mit Hintergrund
+    st.markdown('<div class="custom-box">', unsafe_allow_html=True)
+    st.markdown(
+        """
 - Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.  
 - Verwendung ausschließlich zu wissenschaftlichen Zwecken.  
 - Anonymisierte Erhebung.  
 - Einsicht nur für berechtigte Personen.
-            """.strip()
-        )
-        consent = st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+        """.strip()
+    )
+    consent = st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -177,8 +178,9 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.date_input("Datum", value=datetime.today(), key="datum")
     st.text_input("Name (optional)", key="teilnehmername")
 
-    with st.container(border=True):
-        confirm = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+    st.markdown('<div class="custom-box">', unsafe_allow_html=True)
+    confirm = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
@@ -217,7 +219,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v10"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v11"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
