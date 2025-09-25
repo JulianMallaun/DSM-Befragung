@@ -1,8 +1,7 @@
-# DSM Befragungs-App (Hotel) – v12
+# DSM Befragungs-App (Hotel) – v13
 
-- Consent- und Bestätigungs-Visual: Transparente Blau-Box mit **optisch hineingezogener Checkbox** (negativer Margin).
-- Geräte-Karten: Nur **oberer transparenter Balken**, **ohne Rand und Schatten** (kein Doppel-Effekt).
-- Akzentfarbe in der Sidebar wählbar.
+- Consent-/Confirm-Boxen: beide Elemente (Text + Checkbox) im offiziellen **border=True**-Container, der per CSS einen **transparent-blauen Hintergrund** bekommt. So sind sie garantiert zusammen.
+- Geräte-Karten: nur **oberer transparenter Balken**, keine Doppel-Abgrenzung.
 
 ## Start
 ```bash
