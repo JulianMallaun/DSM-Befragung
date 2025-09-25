@@ -1,7 +1,7 @@
-# DSM Befragungs-App (Hotel) – v8
+# DSM Befragungs-App (Hotel) – v9
 
-- **Checkbox + Erklärungstext sitzen im selben blauen Rahmen**, realisiert durch Styling des Streamlit-Containers via `:has()` (Anker `consent-anchor`/`confirm-anchor`).
-- Deutlich getrennte Gerätekarten (stärkerer Rand, Streifen, Schatten, Abstand).
+- **Checkbox + Erklärungstext im selben Rahmen** mittels `st.container(border=True)` (funktioniert ohne CSS-Hacks).
+- Geräteabtrennung: **schmälerer, vollflächiger, transparenter Top-Balken** auf jeder Karte.
 - Akzentfarbe in der Sidebar wählbar.
 
 ## Start

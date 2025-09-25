@@ -11,7 +11,7 @@ accent_choice = st.sidebar.selectbox(
     "Akzentfarbe",
     ["Blau", "Smaragd", "Violett", "Orange", "Teal"],
     index=0,
-    help="Wähle die Akzentfarbe für Kartenstreifen, Trennlinien und wichtige Boxen."
+    help="Wähle die Akzentfarbe für Trennbalken und Geräte-Karten."
 )
 
 ACCENTS = {
@@ -24,7 +24,7 @@ ACCENTS = {
 
 accent_600 = ACCENTS[accent_choice]["600"]
 accent_100 = ACCENTS[accent_choice]["100"]
-primary_600 = "#0ea5e9"  # Hinweis-Boxen bleiben blau
+primary_600 = "#0ea5e9"  # Consent-Boxen: Blau
 primary_100 = "#f0f9ff"
 
 # =================== Styles ===================
@@ -44,39 +44,37 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Style den CONTAINER selbst via :has(), damit Checkbox + Text zusammen eingerahmt sind */
-div:has(> .consent-anchor), div:has(> .confirm-anchor) {{
-  border: 2px solid var(--primary-600);
-  background: var(--primary-100);
-  padding: 16px;
-  border-radius: 14px;
-  margin: 12px 0 16px 0;
-  box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
+/* Container mit Border (Streamlit 1.37+) in blau einfärben */
+[data-testid="stVerticalBlockBorderWrapper"] {{
+  border: 2px solid var(--primary-600) !important;
+  background: var(--primary-100) !important;
+  border-radius: 14px !important;
 }}
-.consent-anchor, .confirm-anchor {{ display:none; }}
-/* Listen im Kasten */
-div:has(> .consent-anchor) ul {{ margin: 0 0 10px 1rem; }}
-div:has(> .consent-anchor) li {{ margin: 2px 0; }}
+/* Innenabstand für den Inhalt im Border-Container erhöhen */
+[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
+  padding: 12px 14px !important;
+}}
 
-/* Gerätekarte – deutliche Abgrenzung, moderner Look */
+/* Gerätekarte mit schmälerem, vollflächigem, transparenten Top-Balken */
 .device-card {{
   position: relative;
   background: var(--card);
-  padding: 18px;
-  border-radius: 16px;
-  margin: 20px 0;
-  border: 2px solid color-mix(in oklab, var(--accent-600) 40%, var(--border));
-  box-shadow: 0 3px 6px rgba(0,0,0,.06), 0 10px 22px rgba(0,0,0,.06);
+  padding: 14px 16px 14px 16px;
+  border-radius: 14px;
+  margin: 18px 0;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 6px 16px rgba(0,0,0,.06);
 }}
 .device-card::before {{
   content: "";
-  position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
-  background: var(--accent-600);
-  border-top-left-radius: 16px; border-bottom-left-radius: 16px;
+  position: absolute;
+  left: 0; right: 0; top: 0; height: 6px; /* schmälerer Balken */
+  background: color-mix(in oklab, var(--accent-600) 22%, transparent); /* transparentes Blau */
+  border-top-left-radius: 14px; border-top-right-radius: 14px;
 }}
 
-.device-title {{ font-size: 1.12rem; font-weight: 800; margin-bottom: 4px; }}
-.device-section {{ font-size: .95rem; color: var(--subtle); margin-bottom: 10px; }}
+.device-title {{ font-size: 1.12rem; font-weight: 800; margin: 8px 0 2px; }}
+.device-section {{ font-size: .94rem; color: var(--subtle); margin-bottom: 8px; }}
 
 /* Kriterienblock */
 .crit-block {{ border-top: 1px solid var(--border); padding-top: 10px; margin-top: 12px; }}
@@ -162,21 +160,18 @@ Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbr
 Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.""")
 
     st.subheader("Einverständniserklärung")
-    with st.container():
-        # ANCHOR -> Container wird zum blauen Kasten (Text + Checkbox drin)
-        st.markdown('<span class="consent-anchor"></span>', unsafe_allow_html=True)
+
+    # Blaue Box mit Border=True -> enthält Liste + Checkbox wirklich im selben Container
+    with st.container(border=True):
         st.markdown(
             """
-<ul>
-  <li>Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.</li>
-  <li>Verwendung ausschließlich zu wissenschaftlichen Zwecken.</li>
-  <li>Anonymisierte Erhebung.</li>
-  <li>Einsicht nur für berechtigte Personen.</li>
-</ul>
-""",
-            unsafe_allow_html=True,
+- Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.  
+- Verwendung ausschließlich zu wissenschaftlichen Zwecken.  
+- Anonymisierte Erhebung.  
+- Einsicht nur für berechtigte Personen.
+            """.strip()
         )
-        st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+        consent = st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
 
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -185,10 +180,8 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.date_input("Datum", value=datetime.today(), key="datum")
     st.text_input("Name (optional)", key="teilnehmername")
 
-    with st.container():
-        # ANCHOR -> zweiter Kasten
-        st.markdown('<span class="confirm-anchor"></span>', unsafe_allow_html=True)
-        st.checkbox("✅ Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+    with st.container(border=True):
+        confirm = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
 
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
@@ -227,7 +220,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v8"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v9"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
