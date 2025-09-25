@@ -44,8 +44,8 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Blaue Rahmen-Box – Inhalt komplett innen (Text + Checkbox) */
-.box-container {{
+/* Style den CONTAINER selbst via :has(), damit Checkbox + Text zusammen eingerahmt sind */
+div:has(> .consent-anchor), div:has(> .confirm-anchor) {{
   border: 2px solid var(--primary-600);
   background: var(--primary-100);
   padding: 16px;
@@ -53,9 +53,10 @@ html, body, [class^="css"] {{ color: var(--text); }}
   margin: 12px 0 16px 0;
   box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
 }}
-.box-container p {{ margin: 0 0 10px 0; }}
-.box-container ul {{ margin: 0 0 10px 1rem; }}
-.box-container li {{ margin: 2px 0; }}
+.consent-anchor, .confirm-anchor {{ display:none; }}
+/* Listen im Kasten */
+div:has(> .consent-anchor) ul {{ margin: 0 0 10px 1rem; }}
+div:has(> .consent-anchor) li {{ margin: 2px 0; }}
 
 /* Gerätekarte – deutliche Abgrenzung, moderner Look */
 .device-card {{
@@ -162,7 +163,8 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
     with st.container():
-        st.markdown('<div class="box-container">', unsafe_allow_html=True)
+        # ANCHOR -> Container wird zum blauen Kasten (Text + Checkbox drin)
+        st.markdown('<span class="consent-anchor"></span>', unsafe_allow_html=True)
         st.markdown(
             """
 <ul>
@@ -175,7 +177,6 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
             unsafe_allow_html=True,
         )
         st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
-        st.markdown('</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -185,9 +186,9 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.text_input("Name (optional)", key="teilnehmername")
 
     with st.container():
-        st.markdown('<div class="box-container">', unsafe_allow_html=True)
+        # ANCHOR -> zweiter Kasten
+        st.markdown('<span class="confirm-anchor"></span>', unsafe_allow_html=True)
         st.checkbox("✅ Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
-        st.markdown('</div>', unsafe_allow_html=True)
 
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
@@ -226,7 +227,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v7"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v8"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]

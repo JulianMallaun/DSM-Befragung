@@ -1,6 +1,6 @@
-# DSM Befragungs-App (Hotel) – v7
+# DSM Befragungs-App (Hotel) – v8
 
-- Einverständnis- und Bestätigungs-Checkboxen **inkl. erklärendem Text vollständig im blauen Rahmen** (ohne extra Überschrift).
+- **Checkbox + Erklärungstext sitzen im selben blauen Rahmen**, realisiert durch Styling des Streamlit-Containers via `:has()` (Anker `consent-anchor`/`confirm-anchor`).
 - Deutlich getrennte Gerätekarten (stärkerer Rand, Streifen, Schatten, Abstand).
 - Akzentfarbe in der Sidebar wählbar.
 
