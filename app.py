@@ -5,101 +5,90 @@ import streamlit as st
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
-# =================== Theme / Farbauswahl ===================
-st.sidebar.header("Darstellung")
-accent_choice = st.sidebar.selectbox(
-    "Akzentfarbe",
-    ["Blau", "Smaragd", "Violett", "Orange", "Teal"],
-    index=0,
-    help="Wähle die Akzentfarbe für Trennstreifen und Gerätekopfzeilen."
-)
+# ============ Konfiguration (für schnellen Rückbau der grafischen Skalen) ============
+VISUAL_SCALES = True   # ← auf False setzen, um zur alten (nur Radio) Version zurückzugehen
 
-ACCENTS_RGB = {
-    "Blau":    "37, 99, 235",   # #2563eb
-    "Smaragd": "5, 150, 105",   # #059669
-    "Violett": "124, 58, 237",  # #7c3aed
-    "Orange":  "234, 88, 12",   # #ea580c
-    "Teal":    "15, 118, 110",  # #0f766e
-}
-accent_rgb = ACCENTS_RGB[accent_choice]
+# ============ Feste CI-Farbe: ORANGE ============
+ACCENT_RGB = "234, 88, 12"   # #ea580c
+PRIMARY_LIGHT_RGB = "14, 165, 233"   # Info-Blau für Box in Light
+PRIMARY_DARK_RGB  = "56, 189, 248"   # Info-Blau in Dark
 
-# =================== Styles ===================
+# ============ Styles ============
 STYLE = f"""
 <style>
 :root {{
-  --accent-rgb: {accent_rgb};
+  --accent-rgb: {ACCENT_RGB};
+  --primary-light-rgb: {PRIMARY_LIGHT_RGB};
+  --primary-dark-rgb:  {PRIMARY_DARK_RGB};
   --text-light: #0f172a;
   --muted-light: #334155;
   --text-dark: #e5e7eb;
-  --muted-dark: #cbd5e1;
-  --primary-light-rgb: 14,165,233;   /* Box-Hintergrund (helles Schema) */
-  --primary-dark-rgb: 56,189,248;    /* Box-Hintergrund (dunkles Schema) */
 }}
 
 html, body, [class^='css'] {{ color: var(--text-light); }}
 
-/* ---- Consent/Confirm: transparenter Kasten ---- */
+/* Consent/Confirm: transparenter Kasten */
 [data-testid="stVerticalBlockBorderWrapper"] {{
   border: none !important;
-  background: rgba(var(--primary-light-rgb), .18) !important;
-  border-radius: 14px !important;
+  background: rgba(var(--primary-light-rgb), .16) !important;
+  border-radius: 16px !important;
   overflow: hidden !important;
 }}
 [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
-  padding: 14px 16px 16px 16px !important;
+  padding: 16px 18px !important;
   background: transparent !important;
 }}
 
-/* ---- Globale Trennlinien entfernen ---- */
+/* Globale Trennlinien entfernen */
 hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
 .block-container hr {{ display: none !important; }}
 
-/* ---- Kriterienblöcke ---- */
-.crit-block {{ border-top: none !important; padding-top: 6px; margin-top: 8px; }}
-.crit-title {{ font-weight: 700; margin-bottom: 2px; color: var(--text-light); }}
-.crit-help {{ font-size: .98rem; line-height: 1.35; margin-bottom: 8px; color: var(--muted-light); }}
+/* Abstand & Weißraum (mobile-first freundlicher) */
+.block-container {{ padding-top: 1.2rem; }}
+h1 {{ margin-bottom: .6rem; }}
+h2 {{ margin-top: 1.6rem; margin-bottom: .6rem; }}
+.device-title {{ font-size: 1.2rem; font-weight: 800; margin: 10px 0 4px; color: rgb(var(--accent-rgb)); }}
+.device-section {{ font-size: .95rem; color: #475569; margin-bottom: 10px; }}
 
-/* ---- Radiogroup Labels Lesbarkeit ---- */
-div[role='radiogroup'] label span {{ color: var(--muted-light) !important; }}
-
-/* ---- Einziger Trennstreifen ---- */
+/* Einziger Trennstreifen */
 .separator {{
   height: 4px;
   width: 100%;
   background: rgba(var(--accent-rgb), .28);
   border-radius: 2px;
-  margin: 18px 0 12px 0;
+  margin: 22px 0 16px 0;
 }}
 
-/* ==== Gerätekopf ==== */
-.device-title {{
-  font-size: 1.2rem;
-  font-weight: 800;
-  margin: 6px 0 2px;
-  color: rgb(var(--accent-rgb));
-}}
-.device-section {{
-  font-size: .94rem;
-  color: #475569;
-  margin-bottom: 8px;
-}}
+/* Kriterienblöcke */
+.crit-block {{ border-top: none !important; padding-top: 8px; margin-top: 10px; }}
+.crit-title {{ font-weight: 700; margin-bottom: 4px; }}
+.crit-help {{ font-size: 1rem; line-height: 1.5; margin-bottom: 10px; color: var(--muted-light); }}
 
-/* ===== Dark Mode / Smartphone Lesbarkeit ===== */
+/* Grafische Skala (rein visuell, spiegelt die Auswahl) */
+.scale-wrap {{ margin: 6px 0 12px 0; }}
+.scale-rail {{ position: relative; height: 8px; background: rgba(var(--accent-rgb), .2); border-radius: 999px; }}
+.scale-fill {{ position: absolute; left:0; top:0; bottom:0; width: 0%; background: rgba(var(--accent-rgb), .85); border-radius: 999px; transition: width .15s ease; }}
+.scale-ticks {{ display: flex; justify-content: space-between; margin-top: 6px; font-size: .9rem; color:#64748b; }}
+.scale-ticks span:first-child {{ color:#111827; font-weight:600; }}
+.scale-ticks span:last-child  {{ color:#111827; font-weight:600; }}
+
+/* Dark Mode Kontraste */
 @media (prefers-color-scheme: dark) {{
   html, body, [class^='css'] {{ color: var(--text-dark); }}
-  .crit-title {{ color: var(--text-dark); }}
-  .crit-help {{ color: rgba(255,255,255,.82); }}
-  div[role='radiogroup'] label span {{ color: rgba(255,255,255,.82) !important; }}
-  .device-section {{ color: rgba(255,255,255,.65); }}
-  [data-testid="stVerticalBlockBorderWrapper"] {{
-    background: rgba(var(--primary-dark-rgb), .20) !important;
-  }}
+  .crit-help {{ color: rgba(255,255,255,.85); }}
+  .device-section {{ color: rgba(255,255,255,.7); }}
+  [data-testid="stVerticalBlockBorderWrapper"] {{ background: rgba(var(--primary-dark-rgb), .20) !important; }}
+  .scale-rail {{ background: rgba(var(--accent-rgb), .22); }}
+  .scale-ticks span {{ color: rgba(255,255,255,.7); }}
+  .scale-ticks span:first-child,
+  .scale-ticks span:last-child {{ color: rgba(255,255,255,.95); }}
 }}
 
-/* ===== Mobile Tweaks ===== */
-@media (max-width: 480px) {{
-  .crit-help {{ font-size: 1rem; line-height: 1.45; }}
-  .device-title {{ font-size: 1.25rem; }}
+/* Mobile Tweaks */
+@media (max-width: 520px) {{
+  .crit-help {{ font-size: 1.02rem; line-height: 1.55; }}
+  .device-title {{ font-size: 1.24rem; }}
+  .separator {{ margin: 20px 0 14px 0; }}
 }}
 </style>
 """
@@ -107,7 +96,7 @@ st.markdown(STYLE, unsafe_allow_html=True)
 
 st.title("Befragung Lastflexibilität – Hotel")
 
-# =================== Helpers ===================
+# Hilfsfunktionen
 def get_gsheet_id():
     return (
         st.secrets.get("gsheet_id")
@@ -146,17 +135,30 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
 def sget(key: str, default=None):
     return st.session_state.get(key, default)
 
+def visual_scale(current_value:int, max_value:int=4, left_label:str="", right_label:str=""):
+    pct = int((current_value or 0) / max_value * 100)
+    st.markdown(f"""
+<div class="scale-wrap">
+  <div class="scale-rail"><div class="scale-fill" style="width:{pct}%;"></div></div>
+  <div class="scale-ticks"><span>{left_label}</span><span>{right_label}</span></div>
+</div>
+""", unsafe_allow_html=True)
+
 def criterion_radio_inline(title: str, short_desc: str, labels_map: dict[int,str], key: str, disabled: bool):
     st.markdown('<div class="crit-block">', unsafe_allow_html=True)
     st.markdown(f'<div class="crit-title">{title}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="crit-help">{short_desc}</div>', unsafe_allow_html=True)
     options = [1,2,3,4]
-    def fmt(v: int): return f"{v} – {labels_map.get(v, '')}"
+    def fmt(v: int): return f"{v} – {labels_map.get(v, "")}"
     value = st.radio("", options, key=key, disabled=disabled, horizontal=True, format_func=fmt, label_visibility="collapsed")
+    if VISUAL_SCALES:
+        left = labels_map[min(labels_map.keys())]
+        right = labels_map[max(labels_map.keys())]
+        visual_scale(int(value or 0), max_value=4, left_label=left, right_label=right)
     st.markdown('</div>', unsafe_allow_html=True)
     return value
 
-# =================== Kriterien ===================
+# Kriterien
 K1_TITLE, K1_SHORT = "Leistung anpassen", "Wie stark kann die Leistung kurzfristig reduziert/verändert werden?"
 K1_LABELS = {1:"kaum anpassbar",2:"etwas anpassbar",3:"gut anpassbar",4:"sehr gut anpassbar"}
 K2_TITLE, K2_SHORT = "Nutzungsdauer anpassbar", "Wie lange kann die Nutzung/Funktion gedrosselt oder verschoben werden?"
@@ -164,7 +166,7 @@ K2_LABELS = {1:"nicht anpassbar",2:"< 15 min",3:"15–45 min",4:"> 45 min"}
 K4_TITLE, K4_SHORT = "Zeitliche Flexibilität", "Ist der Einsatz an feste Zeiten gebunden oder frei planbar?"
 K4_LABELS = {1:"feste Zeiten",2:"eingeschränkt flexibel",3:"eher flexibel",4:"völlig flexibel"}
 
-# =================== Katalog ===================
+# Katalog
 CATALOG = {
     "A) Küche": ["Kühlhaus","Tiefkühlhaus","Kombidämpfer","Fritteuse","Induktionsherd","Geschirrspülmaschine"],
     "B) Wellness / Spa / Pool": ["Sauna","Dampfbad","Pool-Umwälzpumpe","Schwimmbad-Lüftung/Entfeuchtung"],
@@ -173,11 +175,13 @@ CATALOG = {
 
 if "started" not in st.session_state: st.session_state.started = False
 
-# =================== Intro-Seite ===================
+# Intro
 if not st.session_state.started:
     st.markdown("""**Einleitung**  
 Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
-Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.""")
+Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.  
+**Dauer:** Die Befragung dauert ungefähr **5–7 Minuten**.
+""")
 
     st.subheader("Einverständniserklärung")
 
@@ -210,7 +214,7 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
             st.session_state.started=True
             st.rerun()
 
-# =================== Hauptseite (Liste) ===================
+# Hauptseite
 if st.session_state.started:
     all_records=[]
     for section,devices in CATALOG.items():
@@ -237,7 +241,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v16"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v17"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]

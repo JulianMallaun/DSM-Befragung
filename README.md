@@ -1,9 +1,13 @@
-# DSM Befragungs-App (Hotel) – v16 (Mobile + Dark Mode)
+# DSM Befragungs-App (Hotel) – v17
 
-Fix: Erklärtexte der Kriterien waren auf Smartphones im Dark Mode schlecht lesbar.
-- **Dark-Mode gezielte Farben**: `crit-title`, `crit-help`, Radiolabels werden in dunklen Umgebungen hell dargestellt (≈82% Weiß).
-- **Mobile Tweaks**: Größere Schrift und mehr Zeilenhöhe auf kleinen Displays.
-- Weiterhin: nur der farbige **Separator** zwischen Geräten; Consent-/Confirm-Boxen mit transparentem Blau (hell & dunkel).
+Änderungen (gemäß Wunsch):
+- **Dauerhinweis**: „Die Befragung dauert ungefähr **5–7 Minuten**.“
+- **Grafische Skalen** (Testbetrieb): ein farbiger Füllbalken spiegelt die Radio-Auswahl (abschaltbar via `VISUAL_SCALES = False`).
+- **Orange** als feste CI-Farbe, Farbwähler entfernt.
+- **Abstände & Weißraum** erhöht; Button unverändert.
+- Dark-Mode-Optimierung weiter aktiv.
+
+Rückbau auf die vorige Version (ohne grafische Skalen): Setze in `app.py` ganz oben `VISUAL_SCALES = False`.
 
 ## Start
 ```bash
