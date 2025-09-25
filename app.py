@@ -44,6 +44,14 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
+/* Größere Hauptüberschrift auf Seite 2 */
+h2.section-heading {{
+  font-size: 1.35rem;
+  line-height: 1.25;
+  margin: 1.25rem 0 .25rem 0;
+  letter-spacing: .2px;
+}}
+
 /* Divider */
 .section-divider {{
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem;
@@ -52,58 +60,62 @@ html, body, [class^="css"] {{ color: var(--text); }}
 .section-divider::before, .section-divider::after {{ content: ""; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }}
 .section-divider span {{ font-weight: 700; color: var(--subtle); font-size: .95rem; }}
 
-/* Hinweis-Boxen */
-.consent-box, .confirm-box {{
+/* Konsistente, blaue Hinweisboxen – jetzt WIRKLICH um die Checkboxen herum.
+   Trick: Wir setzen einen Marker im Container und stylen den Elternblock via :has(). */
+.consent-marker, .confirm-marker {{ display:none; }}
+div:has(> .consent-marker), div:has(> .confirm-marker) {{
   border: 2px solid var(--primary-600);
   background: var(--primary-100);
-  padding: 16px; border-radius: 14px; margin: 8px 0 14px 0;
+  padding: 16px;
+  border-radius: 14px;
+  margin: 8px 0 14px 0;
   box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
 }}
 .consent-title {{ font-weight: 700; margin-bottom: 6px; color: var(--text); }}
 
-/* Gerätekarte */
+/* Gerätekarte – klarere Trennung, stärkerer Streifen, mehr Abstand */
 .device-card {{
   position: relative;
   background: var(--card);
-  padding: 14px 16px 12px 16px;
-  border-radius: 14px;
-  margin: 14px 0;
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 2px 6px rgba(0,0,0,.04);
+  padding: 16px 18px 14px 18px;
+  border-radius: 16px;
+  margin: 18px 0;
+  border: 1px solid color-mix(in oklab, var(--accent-600) 25%, var(--border));
+  box-shadow: 0 2px 4px rgba(0,0,0,.03), 0 10px 22px rgba(0,0,0,.06);
 }}
 .device-card::before {{
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
   background: var(--accent-600);
-  border-top-left-radius: 14px; border-bottom-left-radius: 14px;
+  border-top-left-radius: 16px; border-bottom-left-radius: 16px;
 }}
-.device-card:hover {{ box-shadow: 0 2px 0 rgba(0,0,0,.03), 0 6px 16px rgba(0,0,0,.08); }}
-.device-card:focus-within {{ outline: 3px solid color-mix(in oklab, var(--accent-600) 30%, transparent); }}
+/* Deutliche visuelle Lücke zwischen Geräten */
+.device-sep {{
+  height: 14px;
+}}
 
-.device-title {{ font-size: 1.06rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }}
-.device-section {{ font-size: .94rem; color: var(--subtle); margin-bottom: 8px; }}
+.device-title {{ font-size: 1.08rem; font-weight: 800; color: var(--text); margin-bottom: 2px; }}
+.device-section {{ font-size: .94rem; color: var(--subtle); margin-bottom: 10px; }}
 
-/* Kriterien */
-.crit-block {{ border-top: 2px solid color-mix(in oklab, var(--accent-600) 20%, transparent); padding-top: 8px; margin-top: 10px; }}
+/* Kriteriumsblock */
+.crit-block {{ border-top: 2px solid color-mix(in oklab, var(--accent-600) 20%, transparent); padding-top: 10px; margin-top: 12px; }}
 .crit-title {{ font-size: 1.02rem; font-weight: 700; margin-bottom: 2px; color: var(--text); }}
 .crit-help {{ font-size: .95rem; color: #111827; margin-bottom: 6px; }}
 
-/* Section-Chip */
+/* Abschnitts-Chip (behalten), zusätzlich große Überschrift */
 .section-chip {{
   display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .6rem;
   border: 1px solid var(--border); border-radius: 9999px; background: var(--surface);
-  font-weight: 700; color: var(--subtle); margin: .5rem 0 .25rem 0;
+  font-weight: 700; color: var(--subtle); margin: .25rem 0 .75rem 0;
 }}
 .section-dot {{ width: .5rem; height: .5rem; border-radius: 9999px; background: var(--accent-600); display: inline-block; }}
-
-.card-spacer {{ height: 2px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin-top: 10px; }}
 </style>
 """
-
 st.markdown(STYLE, unsafe_allow_html=True)
 
 st.title("Befragung Lastflexibilität – Hotel")
 
-# Helpers
+# =================== Helpers ===================
 def labeled_divider(label: str):
     st.markdown(f'<div class="section-divider"><span>{label}</span></div>', unsafe_allow_html=True)
 
@@ -155,7 +167,7 @@ def criterion_radio_inline(title: str, short_desc: str, labels_map: dict[int,str
     st.markdown('</div>', unsafe_allow_html=True)
     return value
 
-# Kriterien
+# =================== Kriterien ===================
 K1_TITLE, K1_SHORT = "Leistung anpassen", "Wie stark kann die Leistung kurzfristig reduziert/verändert werden?"
 K1_LABELS = {1:"kaum anpassbar",2:"etwas anpassbar",3:"gut anpassbar",4:"sehr gut anpassbar"}
 K2_TITLE, K2_SHORT = "Nutzungsdauer anpassbar", "Wie lange kann die Nutzung/Funktion gedrosselt oder verschoben werden?"
@@ -163,6 +175,7 @@ K2_LABELS = {1:"nicht anpassbar",2:"< 15 min",3:"15–45 min",4:"> 45 min"}
 K4_TITLE, K4_SHORT = "Zeitliche Flexibilität", "Ist der Einsatz an feste Zeiten gebunden oder frei planbar?"
 K4_LABELS = {1:"feste Zeiten",2:"eingeschränkt flexibel",3:"eher flexibel",4:"völlig flexibel"}
 
+# =================== Katalog ===================
 CATALOG = {
     "A) Küche": ["Kühlhaus","Tiefkühlhaus","Kombidämpfer","Fritteuse","Induktionsherd","Geschirrspülmaschine"],
     "B) Wellness / Spa / Pool": ["Sauna","Dampfbad","Pool-Umwälzpumpe","Schwimmbad-Lüftung/Entfeuchtung"],
@@ -171,14 +184,19 @@ CATALOG = {
 
 if "started" not in st.session_state: st.session_state.started = False
 
+# =================== Intro-Seite ===================
 if not st.session_state.started:
-    st.markdown("**Einleitung**  \nVielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  \nDie Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.")
+    st.markdown("""**Einleitung**  
+Vielen Dank für Ihre Teilnahme. Ziel ist es, die Flexibilität des Energieverbrauchs in Hotels besser zu verstehen.  
+Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken genutzt.""")
+
     st.subheader("Einverständniserklärung")
-    st.markdown('<div class="consent-box">', unsafe_allow_html=True)
-    st.markdown('<div class="consent-title">Bitte bestätigen Sie folgende Punkte:</div>', unsafe_allow_html=True)
-    st.markdown("• Teilnahme ist freiwillig.<br/>• Verwendung nur zu wissenschaftlichen Zwecken.<br/>• Anonymisiert.<br/>• Einsicht nur für Berechtigte.", unsafe_allow_html=True)
-    st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="consent-marker"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="consent-title">Bitte bestätigen Sie folgende Punkte:</div>', unsafe_allow_html=True)
+        st.markdown("• Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.<br/>• Verwendung ausschließlich zu wissenschaftlichen Zwecken.<br/>• Anonymisierte Erhebung.<br/>• Einsicht nur für berechtigte Personen.", unsafe_allow_html=True)
+        st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+
     labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -186,9 +204,11 @@ if not st.session_state.started:
     with col3: st.text_input("Position (Pflicht)", key="position")
     st.date_input("Datum", value=datetime.today(), key="datum")
     st.text_input("Name (optional)", key="teilnehmername")
-    st.markdown('<div class="confirm-box">', unsafe_allow_html=True)
-    st.checkbox("✅ Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    with st.container():
+        st.markdown('<div class="confirm-marker"></div>', unsafe_allow_html=True)
+        st.checkbox("✅ Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
             st.warning("Bitte alle Pflichtfelder und Häkchen ausfüllen.")
@@ -197,32 +217,44 @@ if not st.session_state.started:
             st.session_state.started=True
             st.rerun()
 
+# =================== Hauptseite (Liste) ===================
 if st.session_state.started:
-    st.subheader("Gerätekatalog – bitte alles der Reihe nach ausfüllen")
-    all_records=[]; 
+    st.markdown('<h2 class="section-heading">Gerätekatalog – bitte alles der Reihe nach ausfüllen</h2>', unsafe_allow_html=True)
+    all_records=[]
     for section,devices in CATALOG.items():
         st.markdown(f'<span class="section-chip"><span class="section-dot"></span>{section}</span>', unsafe_allow_html=True)
-        st.markdown('<div class="card-spacer"></div>', unsafe_allow_html=True)
-        for dev in devices:
+
+        for idx, dev in enumerate(devices, start=1):
+            st.markdown('<div class="device-sep"></div>', unsafe_allow_html=True)
             st.markdown('<div class="device-card">', unsafe_allow_html=True)
             st.markdown(f'<div class="device-title">{dev}</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-section">{section}</div>', unsafe_allow_html=True)
+
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
+
+            # Kriterien mit Inline-Beschriftung
             k1 = criterion_radio_inline(K1_TITLE, K1_SHORT, K1_LABELS, key=f"k1_{section}_{dev}", disabled=not vorhanden)
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
-            all_records.append({"section":section,"geraet":dev,"vorhanden":bool(vorhanden),"modulation":int(k1) if vorhanden else None,"dauer":int(k2) if vorhanden else None,"betriebsfenster":int(k4) if vorhanden else None})
-            st.markdown('</div>', unsafe_allow_html=True)
+
+            all_records.append({"section":section,"geraet":dev,"vorhanden":bool(vorhanden),
+                                "modulation":int(k1) if vorhanden else None,
+                                "dauer":int(k2) if vorhanden else None,
+                                "betriebsfenster":int(k4) if vorhanden else None})
+            st.markdown('</div>', unsafe_allow_html=True)  # end device-card
+
     st.markdown("---")
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
         if len(all_records)==0:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v4-theme"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v5-consent-h2"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
-        if "gcp_service_account" in st.secrets and get_gsheet_id(): st.success("Erfassung abgeschlossen. "+submit_to_gsheets(df))
-        else: st.warning("Google Sheets ist noch nicht konfiguriert.")
+        if "gcp_service_account" in st.secrets and get_gsheet_id():
+            st.success("Erfassung abgeschlossen. "+submit_to_gsheets(df))
+        else:
+            st.warning("Google Sheets ist noch nicht konfiguriert.")
 st.caption("© Masterarbeit – Intelligente Energiesysteme")
