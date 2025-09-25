@@ -1,7 +1,8 @@
-# DSM Befragungs-App (Hotel) – v13
+# DSM Befragungs-App (Hotel) – v14 (Mobile First)
 
-- Consent-/Confirm-Boxen: beide Elemente (Text + Checkbox) im offiziellen **border=True**-Container, der per CSS einen **transparent-blauen Hintergrund** bekommt. So sind sie garantiert zusammen.
-- Geräte-Karten: nur **oberer transparenter Balken**, keine Doppel-Abgrenzung.
+- Alle Standard-Trennlinien entfernt.
+- Einziger Separator: schmaler, farbiger Streifen zwischen den Geräten.
+- Consent-/Confirm-Boxen: transparenter blauer Hintergrund, Text + Checkbox im selben Container.
 
 ## Start
 ```bash

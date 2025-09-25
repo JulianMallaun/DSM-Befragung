@@ -11,68 +11,61 @@ accent_choice = st.sidebar.selectbox(
     "Akzentfarbe",
     ["Blau", "Smaragd", "Violett", "Orange", "Teal"],
     index=0,
-    help="Wähle die Akzentfarbe für Trennbalken und Geräte-Karten."
+    help="Wähle die Akzentfarbe für Trennstreifen."
 )
 
-ACCENTS = {
-    "Blau":   {"600": "#2563eb", "100": "#dbeafe"},
-    "Smaragd":{"600": "#059669", "100": "#d1fae5"},
-    "Violett":{"600": "#7c3aed", "100": "#ede9fe"},
-    "Orange": {"600": "#ea580c", "100": "#ffedd5"},
-    "Teal":   {"600": "#0f766e", "100": "#ccfbf1"},
+ACCENTS_RGB = {
+    "Blau":    "37, 99, 235",   # #2563eb
+    "Smaragd": "5, 150, 105",   # #059669
+    "Violett": "124, 58, 237",  # #7c3aed
+    "Orange":  "234, 88, 12",   # #ea580c
+    "Teal":    "15, 118, 110",  # #0f766e
 }
-
-accent_600 = ACCENTS[accent_choice]["600"]
+accent_rgb = ACCENTS_RGB[accent_choice]
+primary_rgb = "14, 165, 233"   # #0ea5e9 (Kasten)
 
 # =================== Styles ===================
 STYLE = f"""
 <style>
-:root {{ --accent-600: {accent_600}; --blue: #0ea5e9; }}
+:root {{ --accent-rgb: {accent_rgb}; --primary-rgb: {primary_rgb}; }}
+html, body, [class^='css'] {{ color: #0f172a; }}
 
-html, body, [class^="css"] {{ color: #0f172a; }}
-
-/* ---- CONSENT/CONFIRM BOX (robust) ----
-We style the official Streamlit bordered container wrapper and its inner block.
-This ensures the background covers BOTH text and checkbox. */
+/* ---- Consent/Confirm: robuster transparenter Kasten ---- */
 [data-testid="stVerticalBlockBorderWrapper"] {{
-  border: none !important;                   /* remove gray border */
-  background: color-mix(in oklab, var(--blue) 18%, transparent) !important;
+  border: none !important;
+  background: rgba(var(--primary-rgb), .18) !important;
   border-radius: 14px !important;
   overflow: hidden !important;
 }}
 [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
-  padding: 14px 16px 16px 16px !important;   /* inner padding */
-  background: transparent !important;        /* keep transparent; wrapper provides bg */
+  padding: 14px 16px 16px 16px !important;
+  background: transparent !important;
 }}
 
-/* ---- DEVICE CARDS ----  Only a slim top bar, no borders or shadows */
-.device-card {{
-  position: relative;
-  background: #ffffff;
-  padding: 14px 16px 14px 16px;
-  border-radius: 14px;
-  margin: 22px 0;
-  border: none;
-  box-shadow: none;
-}}
-.device-card::before {{
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0; height: 6px;
-  background: color-mix(in oklab, var(--accent-600) 26%, transparent);
-  border-top-left-radius: 14px; border-top-right-radius: 14px;
-}}
+/* ---- Globale Trennlinien entfernen ---- */
+hr, [data-testid="stMarkdownContainer"] hr {{ display: none !important; }}
+.block-container hr {{ display: none !important; }}
 
-.device-title {{ font-size: 1.12rem; font-weight: 800; margin: 8px 0 2px; }}
-.device-section {{ font-size: .94rem; color: #475569; margin-bottom: 8px; }}
-
-/* Criteria block */
-.crit-block {{ border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 12px; }}
+/* ---- Kriterienblöcke: keine Linie ---- */
+.crit-block {{ border-top: none !important; padding-top: 6px; margin-top: 8px; }}
 .crit-title {{ font-weight: 700; margin-bottom: 2px; }}
-.crit-help {{ font-size: .95rem; margin-bottom: 6px; }}
+.crit-help {{ font-size: .95rem; margin-bottom: 6px; color:#111827; }}
+
+/* ---- Einziger Trennstreifen ---- */
+.separator {{
+  height: 4px;
+  width: 100%;
+  background: rgba(var(--accent-rgb), .28);
+  border-radius: 2px;
+  margin: 18px 0 12px 0;
+}}
+
+/* Gerätesektion-Header */
+h2.section {{ font-size: 1.35rem; margin: 10px 0 6px 0; }}
+.device-title {{ font-size: 1.08rem; font-weight: 800; margin: 6px 0 2px; }}
+.device-section {{ font-size: .94rem; color: #475569; margin-bottom: 8px; }}
 </style>
 """
-
 st.markdown(STYLE, unsafe_allow_html=True)
 
 st.title("Befragung Lastflexibilität – Hotel")
@@ -151,7 +144,6 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
 
-    # OFFIZIELLER bordered Container: beides (Text + Checkbox) liegt innen und wird per CSS eingefärbt
     with st.container(border=True):
         st.markdown(
             """
@@ -161,7 +153,7 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 - Einsicht nur für berechtigte Personen.
             """.strip()
         )
-        consent = st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+        st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
 
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -171,7 +163,7 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.text_input("Name (optional)", key="teilnehmername")
 
     with st.container(border=True):
-        confirm = st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+        st.checkbox("Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
 
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
@@ -186,14 +178,14 @@ if st.session_state.started:
     all_records=[]
     for section,devices in CATALOG.items():
         st.markdown(f"## {section}")
-        for dev in devices:
-            st.markdown('<div class="device-card">', unsafe_allow_html=True)
+        for idx, dev in enumerate(devices):
+            if idx > 0:
+                st.markdown('<div class="separator"></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-title">{dev}</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-section">{section}</div>', unsafe_allow_html=True)
 
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
 
-            # Kriterien mit Inline-Beschriftung
             k1 = criterion_radio_inline(K1_TITLE, K1_SHORT, K1_LABELS, key=f"k1_{section}_{dev}", disabled=not vorhanden)
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
@@ -202,15 +194,13 @@ if st.session_state.started:
                                 "modulation":int(k1) if vorhanden else None,
                                 "dauer":int(k2) if vorhanden else None,
                                 "betriebsfenster":int(k4) if vorhanden else None})
-            st.markdown('</div>', unsafe_allow_html=True)  # end device-card
 
-    st.markdown("---")
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
         if len(all_records)==0:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v13"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v14"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
