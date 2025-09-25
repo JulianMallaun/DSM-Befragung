@@ -1,9 +1,8 @@
-# DSM Befragungs-App (Hotel)
+# DSM Befragungs-App (Hotel) – v7
 
-Streamlit-App zur Erhebung der Lastflexibilität von Hotel-Bereichen/Geräten.
-- Wahl der Akzentfarbe in der Sidebar
-- Deutlich sichtbare, **blaue** Consent-Boxen um die Checkboxes (via CSS :has()-Marker)
-- Klar getrennte Gerätekarten mit farbigem Streifen und größerer Abschnittsüberschrift
+- Einverständnis- und Bestätigungs-Checkboxen **inkl. erklärendem Text vollständig im blauen Rahmen** (ohne extra Überschrift).
+- Deutlich getrennte Gerätekarten (stärkerer Rand, Streifen, Schatten, Abstand).
+- Akzentfarbe in der Sidebar wählbar.
 
 ## Start
 ```bash

@@ -24,7 +24,7 @@ ACCENTS = {
 
 accent_600 = ACCENTS[accent_choice]["600"]
 accent_100 = ACCENTS[accent_choice]["100"]
-primary_600 = "#0ea5e9"
+primary_600 = "#0ea5e9"  # Hinweis-Boxen bleiben blau
 primary_100 = "#f0f9ff"
 
 # =================== Styles ===================
@@ -44,25 +44,28 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Hinweisboxen um Checkboxes */
+/* Blaue Rahmen-Box – Inhalt komplett innen (Text + Checkbox) */
 .box-container {{
   border: 2px solid var(--primary-600);
   background: var(--primary-100);
   padding: 16px;
   border-radius: 14px;
-  margin: 12px 0;
+  margin: 12px 0 16px 0;
   box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
 }}
+.box-container p {{ margin: 0 0 10px 0; }}
+.box-container ul {{ margin: 0 0 10px 1rem; }}
+.box-container li {{ margin: 2px 0; }}
 
-/* Gerätekarte – deutlichere Abgrenzung */
+/* Gerätekarte – deutliche Abgrenzung, moderner Look */
 .device-card {{
   position: relative;
   background: var(--card);
   padding: 18px;
   border-radius: 16px;
   margin: 20px 0;
-  border: 2px solid var(--accent-600);
-  box-shadow: 0 3px 6px rgba(0,0,0,.08);
+  border: 2px solid color-mix(in oklab, var(--accent-600) 40%, var(--border));
+  box-shadow: 0 3px 6px rgba(0,0,0,.06), 0 10px 22px rgba(0,0,0,.06);
 }}
 .device-card::before {{
   content: "";
@@ -71,9 +74,10 @@ html, body, [class^="css"] {{ color: var(--text); }}
   border-top-left-radius: 16px; border-bottom-left-radius: 16px;
 }}
 
-.device-title {{ font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }}
+.device-title {{ font-size: 1.12rem; font-weight: 800; margin-bottom: 4px; }}
 .device-section {{ font-size: .95rem; color: var(--subtle); margin-bottom: 10px; }}
 
+/* Kriterienblock */
 .crit-block {{ border-top: 1px solid var(--border); padding-top: 10px; margin-top: 12px; }}
 .crit-title {{ font-weight: 700; margin-bottom: 2px; }}
 .crit-help {{ font-size: .95rem; margin-bottom: 6px; }}
@@ -159,6 +163,17 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.subheader("Einverständniserklärung")
     with st.container():
         st.markdown('<div class="box-container">', unsafe_allow_html=True)
+        st.markdown(
+            """
+<ul>
+  <li>Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.</li>
+  <li>Verwendung ausschließlich zu wissenschaftlichen Zwecken.</li>
+  <li>Anonymisierte Erhebung.</li>
+  <li>Einsicht nur für berechtigte Personen.</li>
+</ul>
+""",
+            unsafe_allow_html=True,
+        )
         st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -194,6 +209,7 @@ if st.session_state.started:
 
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
 
+            # Kriterien mit Inline-Beschriftung
             k1 = criterion_radio_inline(K1_TITLE, K1_SHORT, K1_LABELS, key=f"k1_{section}_{dev}", disabled=not vorhanden)
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
@@ -202,7 +218,7 @@ if st.session_state.started:
                                 "modulation":int(k1) if vorhanden else None,
                                 "dauer":int(k2) if vorhanden else None,
                                 "betriebsfenster":int(k4) if vorhanden else None})
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)  # end device-card
 
     st.markdown("---")
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
@@ -210,7 +226,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v6"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v7"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
