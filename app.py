@@ -24,7 +24,7 @@ ACCENTS = {
 
 accent_600 = ACCENTS[accent_choice]["600"]
 accent_100 = ACCENTS[accent_choice]["100"]
-primary_600 = "#0ea5e9"  # bleibt für Hinweis-Boxen konsistent blau
+primary_600 = "#0ea5e9"
 primary_100 = "#f0f9ff"
 
 # =================== Styles ===================
@@ -44,81 +44,47 @@ STYLE = f"""
 
 html, body, [class^="css"] {{ color: var(--text); }}
 
-/* Größere Hauptüberschrift auf Seite 2 */
-h2.section-heading {{
-  font-size: 1.35rem;
-  line-height: 1.25;
-  margin: 1.25rem 0 .25rem 0;
-  letter-spacing: .2px;
-}}
-
-/* Divider */
-.section-divider {{
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .75rem;
-  margin: 1.25rem 0 .5rem 0;
-}}
-.section-divider::before, .section-divider::after {{ content: ""; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }}
-.section-divider span {{ font-weight: 700; color: var(--subtle); font-size: .95rem; }}
-
-/* Konsistente, blaue Hinweisboxen – jetzt WIRKLICH um die Checkboxen herum.
-   Trick: Wir setzen einen Marker im Container und stylen den Elternblock via :has(). */
-.consent-marker, .confirm-marker {{ display:none; }}
-div:has(> .consent-marker), div:has(> .confirm-marker) {{
+/* Hinweisboxen um Checkboxes */
+.box-container {{
   border: 2px solid var(--primary-600);
   background: var(--primary-100);
   padding: 16px;
   border-radius: 14px;
-  margin: 8px 0 14px 0;
+  margin: 12px 0;
   box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 1px 2px rgba(0,0,0,.04);
 }}
-.consent-title {{ font-weight: 700; margin-bottom: 6px; color: var(--text); }}
 
-/* Gerätekarte – klarere Trennung, stärkerer Streifen, mehr Abstand */
+/* Gerätekarte – deutlichere Abgrenzung */
 .device-card {{
   position: relative;
   background: var(--card);
-  padding: 16px 18px 14px 18px;
+  padding: 18px;
   border-radius: 16px;
-  margin: 18px 0;
-  border: 1px solid color-mix(in oklab, var(--accent-600) 25%, var(--border));
-  box-shadow: 0 2px 4px rgba(0,0,0,.03), 0 10px 22px rgba(0,0,0,.06);
+  margin: 20px 0;
+  border: 2px solid var(--accent-600);
+  box-shadow: 0 3px 6px rgba(0,0,0,.08);
 }}
 .device-card::before {{
   content: "";
-  position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
+  position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
   background: var(--accent-600);
   border-top-left-radius: 16px; border-bottom-left-radius: 16px;
 }}
-/* Deutliche visuelle Lücke zwischen Geräten */
-.device-sep {{
-  height: 14px;
-}}
 
-.device-title {{ font-size: 1.08rem; font-weight: 800; color: var(--text); margin-bottom: 2px; }}
-.device-section {{ font-size: .94rem; color: var(--subtle); margin-bottom: 10px; }}
+.device-title {{ font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }}
+.device-section {{ font-size: .95rem; color: var(--subtle); margin-bottom: 10px; }}
 
-/* Kriteriumsblock */
-.crit-block {{ border-top: 2px solid color-mix(in oklab, var(--accent-600) 20%, transparent); padding-top: 10px; margin-top: 12px; }}
-.crit-title {{ font-size: 1.02rem; font-weight: 700; margin-bottom: 2px; color: var(--text); }}
-.crit-help {{ font-size: .95rem; color: #111827; margin-bottom: 6px; }}
-
-/* Abschnitts-Chip (behalten), zusätzlich große Überschrift */
-.section-chip {{
-  display: inline-flex; align-items: center; gap: .5rem; padding: .25rem .6rem;
-  border: 1px solid var(--border); border-radius: 9999px; background: var(--surface);
-  font-weight: 700; color: var(--subtle); margin: .25rem 0 .75rem 0;
-}}
-.section-dot {{ width: .5rem; height: .5rem; border-radius: 9999px; background: var(--accent-600); display: inline-block; }}
+.crit-block {{ border-top: 1px solid var(--border); padding-top: 10px; margin-top: 12px; }}
+.crit-title {{ font-weight: 700; margin-bottom: 2px; }}
+.crit-help {{ font-size: .95rem; margin-bottom: 6px; }}
 </style>
 """
+
 st.markdown(STYLE, unsafe_allow_html=True)
 
 st.title("Befragung Lastflexibilität – Hotel")
 
 # =================== Helpers ===================
-def labeled_divider(label: str):
-    st.markdown(f'<div class="section-divider"><span>{label}</span></div>', unsafe_allow_html=True)
-
 def get_gsheet_id():
     return (
         st.secrets.get("gsheet_id")
@@ -192,12 +158,10 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
     st.subheader("Einverständniserklärung")
     with st.container():
-        st.markdown('<div class="consent-marker"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="consent-title">Bitte bestätigen Sie folgende Punkte:</div>', unsafe_allow_html=True)
-        st.markdown("• Teilnahme ist freiwillig, Abbruch jederzeit ohne Nachteile.<br/>• Verwendung ausschließlich zu wissenschaftlichen Zwecken.<br/>• Anonymisierte Erhebung.<br/>• Einsicht nur für berechtigte Personen.", unsafe_allow_html=True)
+        st.markdown('<div class="box-container">', unsafe_allow_html=True)
         st.checkbox("✅ Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    labeled_divider("Stammdaten")
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
     with col2: st.text_input("Bereich/Abteilung (Pflicht)", key="bereich")
@@ -206,8 +170,9 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
     st.text_input("Name (optional)", key="teilnehmername")
 
     with st.container():
-        st.markdown('<div class="confirm-marker"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="box-container">', unsafe_allow_html=True)
         st.checkbox("✅ Ich bestätige, dass die Angaben nach bestem Wissen erfolgen.", key="confirm")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if st.button("Start – zum Fragebogen", type="primary", use_container_width=True):
         if not (st.session_state.get("consent") and st.session_state.get("confirm") and st.session_state.get("hotel") and st.session_state.get("bereich") and st.session_state.get("position")):
@@ -219,20 +184,16 @@ Die Angaben werden anonymisiert ausschließlich zu wissenschaftlichen Zwecken ge
 
 # =================== Hauptseite (Liste) ===================
 if st.session_state.started:
-    st.markdown('<h2 class="section-heading">Gerätekatalog – bitte alles der Reihe nach ausfüllen</h2>', unsafe_allow_html=True)
     all_records=[]
     for section,devices in CATALOG.items():
-        st.markdown(f'<span class="section-chip"><span class="section-dot"></span>{section}</span>', unsafe_allow_html=True)
-
-        for idx, dev in enumerate(devices, start=1):
-            st.markdown('<div class="device-sep"></div>', unsafe_allow_html=True)
+        st.markdown(f"## {section}")
+        for dev in devices:
             st.markdown('<div class="device-card">', unsafe_allow_html=True)
             st.markdown(f'<div class="device-title">{dev}</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-section">{section}</div>', unsafe_allow_html=True)
 
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
 
-            # Kriterien mit Inline-Beschriftung
             k1 = criterion_radio_inline(K1_TITLE, K1_SHORT, K1_LABELS, key=f"k1_{section}_{dev}", disabled=not vorhanden)
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
@@ -241,7 +202,7 @@ if st.session_state.started:
                                 "modulation":int(k1) if vorhanden else None,
                                 "dauer":int(k2) if vorhanden else None,
                                 "betriebsfenster":int(k4) if vorhanden else None})
-            st.markdown('</div>', unsafe_allow_html=True)  # end device-card
+            st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
@@ -249,7 +210,7 @@ if st.session_state.started:
             all_records.append({"section":"(keine)","geraet":"(keine)","vorhanden":None,"modulation":None,"dauer":None,"betriebsfenster":None})
         df=pd.DataFrame(all_records)
         meta=st.session_state.get("meta",{})
-        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v5-consent-h2"}
+        metas={"timestamp":datetime.utcnow().isoformat(),"hotel":meta.get("hotel",""),"bereich":meta.get("bereich",""),"position":meta.get("position",""),"datum":meta.get("datum",""),"teilnehmername":meta.get("teilnehmername",""),"survey_version":"2025-09-listlayout-v6"}
         for k,v in metas.items(): df[k]=v
         cols=["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version","section","geraet","vorhanden","modulation","dauer","betriebsfenster"]
         df=df[cols]
@@ -257,4 +218,5 @@ if st.session_state.started:
             st.success("Erfassung abgeschlossen. "+submit_to_gsheets(df))
         else:
             st.warning("Google Sheets ist noch nicht konfiguriert.")
+
 st.caption("© Masterarbeit – Intelligente Energiesysteme")
