@@ -6,7 +6,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
-SURVEY_VERSION = "2025-09-multipage-v24"
+SURVEY_VERSION = "2025-09-multipage-v24.1"
 ACCENT_RGB = "234, 88, 12"
 VISUAL_SCALES = True
 
@@ -17,11 +17,8 @@ STYLE = f"""
   --text-light: #0f172a;
   --muted-light: #334155;
 }}
-/* Grundtypografie */
 .device-title {{ font-size: 1.2rem; font-weight: 800; margin: 10px 0 4px; color: rgb(var(--accent-rgb)); }}
 .separator {{ height: 4px; width: 100%; background: rgba(var(--accent-rgb), .28); border-radius: 2px; margin: 22px 0 16px 0; }}
-
-/* Checkbox "Vorhanden" hervorheben */
 [data-testid="stCheckbox"] label {{
   font-weight: 700 !important;
   background: rgba(var(--accent-rgb), .08);
@@ -52,7 +49,7 @@ if "intro_done" not in st.session_state:
     """)
     if st.button("Weiter zur Befragung", type="primary", use_container_width=True):
         st.session_state.intro_done = True
-        st.experimental_rerun()
+        st.rerun()
     st.stop()
 
 # ---------------- Consent ----------------

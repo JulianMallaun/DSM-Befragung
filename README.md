@@ -1,12 +1,9 @@
-# DSM Befragungs-App (Hotel) – v24 (Multipage)
+# DSM Befragungs-App (Hotel) – v24.1 (Multipage, Fix)
 
-**Warum v24?** Auf Smartphones behalten Browser beim „Rerun“ oft die Scrollposition. Die sicherste Lösung ist echtes
-Seiten-Navigieren. In v24 ist die App in **mehrere Seiten** aufgeteilt – damit startet jede Seite garantiert **ganz oben**.
+Fix: ersetzt `st.experimental_rerun()` durch **`st.rerun()`** (verfügbar in aktuellen Streamlit-Versionen).
+Damit verschwinden die AttributeError auf Start- und Absende-Seite.
 
-## Struktur
-- `app.py` – Intro & Einverständnis. Button wechselt mit `st.switch_page()` zur nächsten Seite.
-- `pages/01_Fragebogen.py` – Geräteabfrage inkl. Prüf-Hinweis bei nicht markierten Geräten.
-- `pages/99_Speichern.py` – Speichern nach Google Sheets + Danke-Seite.
+Multi-Page sorgt weiterhin dafür, dass jede Seite auf dem Smartphone **oben startet**.
 
 ## Start
 ```bash

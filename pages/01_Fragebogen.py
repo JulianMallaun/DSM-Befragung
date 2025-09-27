@@ -99,7 +99,6 @@ for section,devices in CATALOG.items():
 
 all_records = collect_records()
 
-# Pop-up bei fehlenden Häkchen (hier als einfache Warnkarte + Buttons)
 missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]
 
 if st.button("Jetzt absenden und speichern", type="primary", use_container_width=True):
@@ -107,7 +106,7 @@ if st.button("Jetzt absenden und speichern", type="primary", use_container_width
         st.session_state.missing_list = missing
         st.session_state.pending_records = all_records
         st.session_state.show_missing = True
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.session_state.missing_list = []
         st.session_state.pending_records = all_records
@@ -119,7 +118,7 @@ if st.session_state.get("show_missing"):
     with colA:
         if st.button("Weiter bearbeiten", use_container_width=True):
             st.session_state.show_missing = False
-            st.experimental_rerun()
+            st.rerun()
     with colB:
         if st.button("Trotzdem absenden", type="primary", use_container_width=True):
             st.switch_page("pages/99_Speichern.py")
