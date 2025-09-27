@@ -1,13 +1,10 @@
-# DSM Befragungs-App (Hotel) – v17
+# DSM Befragungs-App (Hotel) – v18
 
-Änderungen (gemäß Wunsch):
-- **Dauerhinweis**: „Die Befragung dauert ungefähr **5–7 Minuten**.“
-- **Grafische Skalen** (Testbetrieb): ein farbiger Füllbalken spiegelt die Radio-Auswahl (abschaltbar via `VISUAL_SCALES = False`).
-- **Orange** als feste CI-Farbe, Farbwähler entfernt.
-- **Abstände & Weißraum** erhöht; Button unverändert.
-- Dark-Mode-Optimierung weiter aktiv.
-
-Rückbau auf die vorige Version (ohne grafische Skalen): Setze in `app.py` ganz oben `VISUAL_SCALES = False`.
+Änderungen in v18:
+- Neue **Intro-Seite** mit überarbeitetem Einleitungstext (Absätze, Hervorhebungen, Dauer, Motivation).
+- Erst nach Klick auf „Weiter zur Befragung“ geht es zur Einverständnis-Seite.
+- Wiederholungen (Dauer, Anonymität) aus der Einverständnis-Seite entfernt.
+- Restliche Logik und Layout wie bisher (Skalen, Orange etc.).
 
 ## Start
 ```bash
