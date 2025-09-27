@@ -84,6 +84,21 @@ def collect_records():
             })
     return data
 
+# --- Modal: Hinweis fehlende Geräte (nicht blockierend) ---
+@st.dialog("Hinweis: Nicht markierte Geräte")
+def missing_devices_dialog(missing_list):
+    st.write(f"Es sind **{len(missing_list)} Geräte** noch **nicht als „Vorhanden“ markiert**.")
+    st.write(", ".join(missing_list))
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Weiter bearbeiten", use_container_width=True):
+            st.session_state.force_submit = False
+            st.rerun()
+    with col2:
+        if st.button("Trotzdem absenden", type="primary", use_container_width=True):
+            st.session_state.force_submit = True
+            st.rerun()
+
 for section,devices in CATALOG.items():
     st.markdown(f"## {section}")
     for idx, dev in enumerate(devices):
@@ -99,26 +114,18 @@ for section,devices in CATALOG.items():
 
 all_records = collect_records()
 
-missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]
-
 if st.button("Jetzt absenden und speichern", type="primary", use_container_width=True):
+    missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]
     if len(missing) > 0:
-        st.session_state.missing_list = missing
         st.session_state.pending_records = all_records
-        st.session_state.show_missing = True
-        st.rerun()
+        st.session_state.force_submit = None
+        missing_devices_dialog(missing)
+        st.stop()
     else:
-        st.session_state.missing_list = []
         st.session_state.pending_records = all_records
-        st.switch_page("pages/99_Speichern.py")
+        st.session_state.force_submit = True
+        st.rerun()
 
-if st.session_state.get("show_missing"):
-    st.warning(f"Es sind **{len(st.session_state.missing_list)} Geräte** nicht als „Vorhanden“ markiert:\n\n" + ", ".join(st.session_state.missing_list))
-    colA, colB = st.columns(2)
-    with colA:
-        if st.button("Weiter bearbeiten", use_container_width=True):
-            st.session_state.show_missing = False
-            st.rerun()
-    with colB:
-        if st.button("Trotzdem absenden", type="primary", use_container_width=True):
-            st.switch_page("pages/99_Speichern.py")
+# Nach Dialog: ggf. trotzdem absenden
+if st.session_state.get("force_submit") is True:
+    st.switch_page("pages/99_Speichern.py")

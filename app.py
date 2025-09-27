@@ -6,7 +6,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
-SURVEY_VERSION = "2025-09-multipage-v24.1"
+SURVEY_VERSION = "2025-09-multipage-v24.2"
 ACCENT_RGB = "234, 88, 12"
 VISUAL_SCALES = True
 

@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 import streamlit as st
 
-SURVEY_VERSION = "2025-09-multipage-v24.1"
+SURVEY_VERSION = "2025-09-multipage-v24.2"
 ACCENT_RGB = "234, 88, 12"
 
 STYLE = f"""
@@ -31,7 +31,7 @@ GS_SCOPES = [
     "https://www.googleapis.com/auth/drive.file",
 ]
 
-def submit_to_gsheets(df):
+def submit_to_gsheets(df: pd.DataFrame) -> str:
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -69,7 +69,6 @@ if not all_records or not meta:
     st.warning("Es liegen keine Daten zum Speichern vor.")
     st.stop()
 
-import pandas as pd
 df = pd.DataFrame(all_records)
 metas = {
     "timestamp": datetime.utcnow().isoformat(),

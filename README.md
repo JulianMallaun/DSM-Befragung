@@ -1,11 +1,10 @@
-# DSM Befragungs-App (Hotel) – v24.1 (Multipage, Fix)
+# DSM Befragungs-App (Hotel) – v24.2 (Multipage + Hinweis-Dialog)
 
-Fix: ersetzt `st.experimental_rerun()` durch **`st.rerun()`** (verfügbar in aktuellen Streamlit-Versionen).
-Damit verschwinden die AttributeError auf Start- und Absende-Seite.
+- **Nicht markierte Geräte**: Vor dem Absenden erscheint ein **Dialog** mit Anzahl & Liste – mit Buttons **„Weiter bearbeiten“** oder **„Trotzdem absenden“** (nicht blockierend).
+- Beibehaltung: Multi-Page (mobile-freundlich), Google-Sheets-Header-Anpassung, Orange-CI, visuelle Skalen.
+- Kompatibel mit Streamlit ≥ 1.37 (nutzt `st.rerun` & `st.switch_page`, `@st.dialog`).
 
-Multi-Page sorgt weiterhin dafür, dass jede Seite auf dem Smartphone **oben startet**.
-
-## Start
+Start:
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
