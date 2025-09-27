@@ -1,5 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
+import re
 import pandas as pd
 import streamlit as st
 
@@ -8,7 +9,7 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 # ================== Konfiguration ==================
 VISUAL_SCALES = True                 # grafische Skalen (Testmodus EIN/AUS)
 ACCENT_RGB = "234, 88, 12"           # feste CI-Farbe Orange
-SURVEY_VERSION = "2025-09-listlayout-v19"
+SURVEY_VERSION = "2025-09-listlayout-v20"
 
 # ================== Styles ==================
 STYLE = f"""
@@ -21,22 +22,40 @@ STYLE = f"""
 }}
 .device-title {{ font-size: 1.2rem; font-weight: 800; margin: 10px 0 4px; color: rgb(var(--accent-rgb)); }}
 .device-section {{ font-size: .95rem; color: #475569; margin-bottom: 10px; }}
+
+/* Trenner */
 .separator {{ height: 4px; width: 100%; background: rgba(var(--accent-rgb), .28); border-radius: 2px; margin: 22px 0 16px 0; }}
+
+/* Kriterienblöcke */
 .crit-title {{ font-weight: 700; margin-bottom: 4px; }}
 .crit-help {{ font-size: 1rem; line-height: 1.5; margin-bottom: 10px; color: var(--muted-light); }}
+
+/* Skala */
 .scale-wrap {{ margin: 6px 0 12px 0; }}
 .scale-rail {{ position: relative; height: 8px; background: rgba(var(--accent-rgb), .2); border-radius: 999px; }}
 .scale-fill {{ position: absolute; left:0; top:0; bottom:0; width: 0%; background: rgba(var(--accent-rgb), .85); border-radius: 999px; transition: width .15s ease; }}
 .scale-ticks {{ display: flex; justify-content: space-between; margin-top: 6px; font-size: .9rem; color:#64748b; }}
 .scale-ticks span:first-child, .scale-ticks span:last-child {{ color:#111827; font-weight:600; }}
 
-/* Einfache „Outtake/Outro“-Seite (Smartphone-tauglich) */
+/* Checkbox "Vorhanden" hervorheben */
+[data-testid="stCheckbox"] label {{
+  font-weight: 700 !important;
+  background: rgba(var(--accent-rgb), .08);
+  border: 1px solid rgba(var(--accent-rgb), .35);
+  padding: 8px 12px;
+  border-radius: 12px;
+}}
+[data-testid="stCheckbox"] input[type="checkbox"] {{
+  transform: scale(1.2);
+  margin-right: 8px;
+}}
+
+/* Outro */
 .outro {{ text-align:center; padding: 12vh 4vw; }}
 .outro .check {{ font-size: 64px; line-height: 1; margin-bottom: 12px; }}
 .outro h2 {{ margin: 0 0 8px 0; }}
 .outro p {{ color:#334155; margin: 0 auto 14px; max-width: 40rem; }}
 .outro .card {{ background: rgba(var(--accent-rgb), .06); border-radius: 14px; padding: 12px; margin: 14px auto; max-width: 40rem; }}
-.outro small {{ display:block; color:#64748b; margin-top:8px; }}
 
 @media (prefers-color-scheme: dark) {{
   .outro p {{ color: rgba(255,255,255,.85); }}
@@ -44,6 +63,7 @@ STYLE = f"""
   .scale-rail {{ background: rgba(var(--accent-rgb), .22); }}
   .scale-ticks span {{ color: rgba(255,255,255,.75); }}
   .scale-ticks span:first-child, .scale-ticks span:last-child {{ color: rgba(255,255,255,.95); }}
+  [data-testid="stCheckbox"] label {{ background: rgba(var(--accent-rgb), .18); border-color: rgba(255,255,255,.25);}}
 }}
 </style>
 """
@@ -68,9 +88,6 @@ GS_SCOPES = [
 ]
 
 def submit_to_gsheets(df: pd.DataFrame) -> str:
-    """Sendet die Daten an Google Sheets, wenn Secrets vorhanden sind.
-    Gibt eine aussagekräftige Rückmeldung zurück.
-    """
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -115,6 +132,10 @@ def criterion_radio_inline(title: str, short_desc: str, labels_map: dict[int,str
         visual_scale(int(value or 0), max_value=4, left_label=left, right_label=right)
     st.markdown('</div>', unsafe_allow_html=True)
     return value
+
+def clean_section_label(section: str) -> str:
+    """Entfernt führende Muster wie 'A) ' / 'B) ' am Abschnittsanfang."""
+    return re.sub(r'^[A-Z]\)\s*', '', section).strip()
 
 # ================== Inhalte ==================
 K1_TITLE, K1_SHORT = "Leistung anpassen", "Wie stark kann die Leistung kurzfristig reduziert/verändert werden?"
@@ -163,7 +184,7 @@ if not st.session_state.started:
 - Einsicht nur für berechtigte Personen.
             """.strip()
         )
-        st.checkbox("Ich habe die Informationen gelesen und bin einverstanden.", key="consent")
+        st.checkbox("Vor der Teilnahme gelesen und einverstanden.", key="consent")
 
     col1, col2, col3 = st.columns(3)
     with col1: st.text_input("Hotel (Pflicht)", key="hotel")
@@ -198,7 +219,8 @@ if st.session_state.started and not st.session_state.get("finished"):
             if idx > 0:
                 st.markdown('<div class="separator"></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-title">{dev}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="device-section">{section}</div>', unsafe_allow_html=True)
+            # nur Bereichsname ohne Präfix (A) / B) / C))
+            st.markdown(f'<div class="device-section">{clean_section_label(section)}</div>', unsafe_allow_html=True)
 
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
 
@@ -247,20 +269,6 @@ if st.session_state.get("finished"):
 
     msg = st.session_state.get("submit_result","")
     if msg:
-        st.markdown(f"<div class='outro card'><strong>Status:</strong> {msg}<small>Version: {SURVEY_VERSION} · Einträge: {st.session_state.get('records_count',0)}</small></div>", unsafe_allow_html=True)
-
-    colA, colB = st.columns(2)
-    with colA:
-        if st.button("Neue Antwort starten", use_container_width=True):
-            # Reset, damit erneut geantwortet werden kann
-            keep = {"intro_done": True}
-            st.session_state.clear()
-            st.session_state.update(keep)
-            st.rerun()
-    with colB:
-        st.download_button("Bestätigung als Text speichern",
-                           data=msg or "Erfassung abgeschlossen.",
-                           file_name="bestaetigung.txt",
-                           use_container_width=True)
+        st.markdown(f"<div class='outro card'><strong>Status:</strong> {msg}</div>", unsafe_allow_html=True)
 
 st.caption("© Masterarbeit – Intelligente Energiesysteme")
