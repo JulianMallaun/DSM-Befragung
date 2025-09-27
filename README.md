@@ -1,10 +1,12 @@
-# DSM Befragungs-App (Hotel) – v22-fix
+# DSM Befragungs-App (Hotel) – v24 (Multipage)
 
-Diese Version entspricht funktional der stabilen v22 (ohne Sticky-Header), repariert für Mobile:
+**Warum v24?** Auf Smartphones behalten Browser beim „Rerun“ oft die Scrollposition. Die sicherste Lösung ist echtes
+Seiten-Navigieren. In v24 ist die App in **mehrere Seiten** aufgeteilt – damit startet jede Seite garantiert **ganz oben**.
 
-- **Auto-Scroll-to-Top** nach jedem Schritt (Intro → Einverständnis → Fragebogen → Danke).
-- **Pop-up vor dem Absenden** bei nicht markierten Geräten.
-- **Google-Sheets-Header-Anpassung**: Spalten werden an vorhandene Header im Tab `responses` angepasst.
+## Struktur
+- `app.py` – Intro & Einverständnis. Button wechselt mit `st.switch_page()` zur nächsten Seite.
+- `pages/01_Fragebogen.py` – Geräteabfrage inkl. Prüf-Hinweis bei nicht markierten Geräten.
+- `pages/99_Speichern.py` – Speichern nach Google Sheets + Danke-Seite.
 
 ## Start
 ```bash
