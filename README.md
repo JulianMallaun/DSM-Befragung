@@ -1,10 +1,9 @@
-# DSM Befragungs-App (Hotel) – v20
+# DSM Befragungs-App (Hotel) – v21
 
-Änderungen:
-- **Bereichsbezeichnung unter Geräten ohne Präfix** („A) “, „B) “, „C) “ werden entfernt), z. B. unter „Fritteuse“ steht nur noch **Küche**.
-- **Checkbox „Vorhanden“** klar hervorgehoben: größerer Haken, fetter Text, dezenter Rahmen/Hintergrund.
-- **Outro-Seite vereinfacht**: Nur Dank & Status, keine Zusatz-Buttons mehr.
-- Google-Sheets-Übergabe wie in v19 (Statuskarte nach dem Absenden).
+Neu in v21
+- **Vor Absenden Prüf-Dialog**: Wenn Geräte nicht als „Vorhanden“ markiert sind, erscheint ein Dialog mit der Anzahl und Liste der fehlenden Geräte. Nutzer:in kann *weiter bearbeiten* oder *trotzdem absenden*. Wenn alle Geräte markiert sind, kommt **kein** Dialog.
+- **Sheets-Kompatibilität**: Beim Schreiben wird die **Spaltenreihenfolge an den vorhandenen Header** im Tab `responses` angepasst. Extra-Spalten (`leistung_kw`, `rebound`) werden automatisch als leer ergänzt, damit die Auswertung wieder passt.
+- Bestehende Features bleiben (Intro-Seite, Orange-CI, visuelle Skalen, klare Outro-Seite).
 
 ## Start
 ```bash

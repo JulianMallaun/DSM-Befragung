@@ -9,7 +9,7 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 # ================== Konfiguration ==================
 VISUAL_SCALES = True                 # grafische Skalen (Testmodus EIN/AUS)
 ACCENT_RGB = "234, 88, 12"           # feste CI-Farbe Orange
-SURVEY_VERSION = "2025-09-listlayout-v20"
+SURVEY_VERSION = "2025-09-listlayout-v21"
 
 # ================== Styles ==================
 STYLE = f"""
@@ -88,6 +88,7 @@ GS_SCOPES = [
 ]
 
 def submit_to_gsheets(df: pd.DataFrame) -> str:
+    """Schreibt nach Google Sheets. Passt die Spaltenreihenfolge an vorhandene Header an."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -103,7 +104,17 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
             ws = sh.worksheet("responses")
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="2000", cols="32")
-            ws.append_row(list(df.columns), value_input_option="USER_ENTERED")
+            # Wenn neu: setze unsere Standard-Header
+            header = ["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
+                      "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"]
+            ws.append_row(header, value_input_option="USER_ENTERED")
+        # Vorhandenen Header einlesen und DataFrame daran ausrichten
+        header = ws.row_values(1)
+        # fehlende Header im DF ergänzen, überzählige entfernen
+        for col in header:
+            if col not in df.columns:
+                df[col] = ""
+        df = df.reindex(columns=header, fill_value="")
         values = [[str(r.get(c, "")) if pd.notna(r.get(c)) else "" for c in df.columns] for r in df.to_dict(orient="records")]
         ws.append_rows(values, value_input_option="USER_ENTERED")
         return f"✅ Übertragen nach Google Sheet: {sh.title} – Tab 'responses'."
@@ -211,6 +222,41 @@ if not st.session_state.started:
             st.rerun()
 
 # ================== Hauptfragebogen ==================
+def collect_records():
+    """Sammelt alle Antworten zu einer Liste von Datensätzen."""
+    data=[]
+    for section,devices in CATALOG.items():
+        for dev in devices:
+            vorhanden = st.session_state.get(f"vh_{section}_{dev}", False)
+            k1 = st.session_state.get(f"k1_{section}_{dev}")
+            k2 = st.session_state.get(f"k2_{section}_{dev}")
+            k4 = st.session_state.get(f"k4_{section}_{dev}")
+            data.append({
+                "section":section,
+                "geraet":dev,
+                "vorhanden":bool(vorhanden),
+                "modulation":int(k1) if vorhanden and k1 is not None else "",
+                "dauer":int(k2) if vorhanden and k2 is not None else "",
+                "betriebsfenster":int(k4) if vorhanden and k4 is not None else ""
+            })
+    return data
+
+# Dialog für fehlende „Vorhanden“-Häkchen
+@st.dialog("Hinweis: Nicht markierte Geräte")
+def missing_devices_dialog(missing_list, proceed_key="proceed_submit"):
+    st.write(f"Es sind **{len(missing_list)} Geräte** noch **nicht als „Vorhanden“ markiert**. "
+             "Bitte prüfen Sie, ob diese Geräte wirklich **nicht vorhanden** sind oder ob die Angabe fehlt.")
+    st.write(", ".join(missing_list))
+    cols = st.columns(2)
+    with cols[0]:
+        if st.button("Weiter bearbeiten", use_container_width=True):
+            st.session_state[proceed_key] = False
+            st.rerun()
+    with cols[1]:
+        if st.button("Trotzdem absenden", type="primary", use_container_width=True):
+            st.session_state[proceed_key] = True
+            st.rerun()
+
 if st.session_state.started and not st.session_state.get("finished"):
     all_records=[]
     for section,devices in CATALOG.items():
@@ -219,11 +265,9 @@ if st.session_state.started and not st.session_state.get("finished"):
             if idx > 0:
                 st.markdown('<div class="separator"></div>', unsafe_allow_html=True)
             st.markdown(f'<div class="device-title">{dev}</div>', unsafe_allow_html=True)
-            # nur Bereichsname ohne Präfix (A) / B) / C))
             st.markdown(f'<div class="device-section">{clean_section_label(section)}</div>', unsafe_allow_html=True)
 
             vorhanden = st.checkbox("Vorhanden", key=f"vh_{section}_{dev}")
-
             k1 = criterion_radio_inline(K1_TITLE, K1_SHORT, K1_LABELS, key=f"k1_{section}_{dev}", disabled=not vorhanden)
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
@@ -232,30 +276,46 @@ if st.session_state.started and not st.session_state.get("finished"):
                 "section":section,
                 "geraet":dev,
                 "vorhanden":bool(vorhanden),
-                "modulation":int(k1) if vorhanden else None,
-                "dauer":int(k2) if vorhanden else None,
-                "betriebsfenster":int(k4) if vorhanden else None
+                "modulation":int(k1) if vorhanden else "",
+                "dauer":int(k2) if vorhanden else "",
+                "betriebsfenster":int(k4) if vorhanden else ""
             })
 
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
-        df=pd.DataFrame(all_records)
-        meta=st.session_state.get("meta",{})
-        metas={
-            "timestamp":datetime.utcnow().isoformat(),
-            "hotel":meta.get("hotel",""),
-            "bereich":meta.get("bereich",""),
-            "position":meta.get("position",""),
-            "datum":meta.get("datum",""),
-            "teilnehmername":meta.get("teilnehmername",""),
-            "survey_version":SURVEY_VERSION
-        }
-        for k,v in metas.items(): df[k]=v
-        # Google Sheets
-        result_msg = submit_to_gsheets(df)
-        st.session_state.finished = True
-        st.session_state.submit_result = result_msg
-        st.session_state.records_count = len(df)
+        # Prüfen, ob Geräte ohne Häkchen vorhanden sind
+        missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]
+        if len(missing) > 0:
+            st.session_state["pending_records"] = all_records
+            st.session_state["proceed_submit"] = None
+            missing_devices_dialog(missing, proceed_key="proceed_submit")
+            st.stop()
+
+        st.session_state["pending_records"] = all_records
+        st.session_state["proceed_submit"] = True
         st.rerun()
+
+# Wenn Nutzer nach Dialog „Trotzdem absenden“ gewählt hat
+if st.session_state.get("proceed_submit") is True and not st.session_state.get("finished"):
+    all_records = st.session_state.get("pending_records", collect_records())
+    df=pd.DataFrame(all_records)
+    meta=st.session_state.get("meta",{})
+    metas={
+        "timestamp":datetime.utcnow().isoformat(),
+        "datum": meta.get("datum",""),
+        "hotel":meta.get("hotel",""),
+        "bereich":meta.get("bereich",""),
+        "position":meta.get("position",""),
+        "teilnehmername":meta.get("teilnehmername",""),
+        "survey_version":SURVEY_VERSION
+    }
+    for k,v in metas.items(): df[k]=v
+
+    # Für Sheet-Kompatibilität sorgen (später im submit_to_gsheets wird an Header angepasst)
+    result_msg = submit_to_gsheets(df)
+    st.session_state.finished = True
+    st.session_state.submit_result = result_msg
+    st.session_state.records_count = len(df)
+    st.rerun()
 
 # ================== OUTRO / Danke-Seite ==================
 if st.session_state.get("finished"):
