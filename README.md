@@ -1,9 +1,8 @@
-# DSM Befragungs-App (Hotel) – v21
+# DSM Befragungs-App (Hotel) – v22
 
-Neu in v21
-- **Vor Absenden Prüf-Dialog**: Wenn Geräte nicht als „Vorhanden“ markiert sind, erscheint ein Dialog mit der Anzahl und Liste der fehlenden Geräte. Nutzer:in kann *weiter bearbeiten* oder *trotzdem absenden*. Wenn alle Geräte markiert sind, kommt **kein** Dialog.
-- **Sheets-Kompatibilität**: Beim Schreiben wird die **Spaltenreihenfolge an den vorhandenen Header** im Tab `responses` angepasst. Extra-Spalten (`leistung_kw`, `rebound`) werden automatisch als leer ergänzt, damit die Auswertung wieder passt.
-- Bestehende Features bleiben (Intro-Seite, Orange-CI, visuelle Skalen, klare Outro-Seite).
+Neu in v22
+- **Auto-Scroll to Top**: Nach „Weiter zur Befragung“, nach „Start – zum Fragebogen“ und beim Wechsel auf die Danke-Seite wird die Ansicht **automatisch ganz nach oben** gescrollt. Damit ist die Überschrift auf dem Smartphone nie verdeckt.
+- Bestehende Funktionen bleiben (Prüf-Dialog vor Absenden, Sheets-Header-Anpassung, visuelle Skalen, Orange-CI).
 
 ## Start
 ```bash

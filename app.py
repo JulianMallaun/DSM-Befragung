@@ -3,13 +3,14 @@ from datetime import datetime
 import re
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon="🏨", layout="centered")
 
 # ================== Konfiguration ==================
 VISUAL_SCALES = True                 # grafische Skalen (Testmodus EIN/AUS)
 ACCENT_RGB = "234, 88, 12"           # feste CI-Farbe Orange
-SURVEY_VERSION = "2025-09-listlayout-v21"
+SURVEY_VERSION = "2025-09-listlayout-v22"
 
 # ================== Styles ==================
 STYLE = f"""
@@ -20,6 +21,8 @@ STYLE = f"""
   --muted-light: #334155;
   --text-dark: #e5e7eb;
 }}
+/* leichte, moderne Typografie-Abstände */
+h1 {{ scroll-margin-top: 24px; }}
 .device-title {{ font-size: 1.2rem; font-weight: 800; margin: 10px 0 4px; color: rgb(var(--accent-rgb)); }}
 .device-section {{ font-size: .95rem; color: #475569; margin-bottom: 10px; }}
 
@@ -88,7 +91,6 @@ GS_SCOPES = [
 ]
 
 def submit_to_gsheets(df: pd.DataFrame) -> str:
-    """Schreibt nach Google Sheets. Passt die Spaltenreihenfolge an vorhandene Header an."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -104,18 +106,16 @@ def submit_to_gsheets(df: pd.DataFrame) -> str:
             ws = sh.worksheet("responses")
         except Exception:
             ws = sh.add_worksheet(title="responses", rows="2000", cols="32")
-            # Wenn neu: setze unsere Standard-Header
             header = ["timestamp","datum","hotel","bereich","position","teilnehmername","survey_version",
                       "geraet","vorhanden","leistung_kw","modulation","dauer","rebound","betriebsfenster"]
             ws.append_row(header, value_input_option="USER_ENTERED")
-        # Vorhandenen Header einlesen und DataFrame daran ausrichten
         header = ws.row_values(1)
-        # fehlende Header im DF ergänzen, überzählige entfernen
         for col in header:
             if col not in df.columns:
                 df[col] = ""
         df = df.reindex(columns=header, fill_value="")
-        values = [[str(r.get(c, "")) if pd.notna(r.get(c)) else "" for c in df.columns] for r in df.to_dict(orient="records")]
+        values = [[str(r.get(c, "")) if pd.notna(r.get(c)) else "" for c in df.columns]
+                  for r in df.to_dict(orient="records")]
         ws.append_rows(values, value_input_option="USER_ENTERED")
         return f"✅ Übertragen nach Google Sheet: {sh.title} – Tab 'responses'."
     except Exception as e:
@@ -145,8 +145,11 @@ def criterion_radio_inline(title: str, short_desc: str, labels_map: dict[int,str
     return value
 
 def clean_section_label(section: str) -> str:
-    """Entfernt führende Muster wie 'A) ' / 'B) ' am Abschnittsanfang."""
     return re.sub(r'^[A-Z]\)\s*', '', section).strip()
+
+def scroll_to_top():
+    """Scrollt sauber nach ganz oben (fix für Mobile/Keyboard-Verschiebung)."""
+    components.html("<script>window.parent.scrollTo({top:0, left:0, behavior:'instant'});</script>", height=0)
 
 # ================== Inhalte ==================
 K1_TITLE, K1_SHORT = "Leistung anpassen", "Wie stark kann die Leistung kurzfristig reduziert/verändert werden?"
@@ -178,6 +181,8 @@ if "intro_done" not in st.session_state:
     """)
     if st.button("Weiter zur Befragung", type="primary", use_container_width=True):
         st.session_state.intro_done = True
+        st.session_state.started = False
+        st.session_state._scroll_top_once = True
         st.rerun()
     st.stop()
 
@@ -185,6 +190,9 @@ if "intro_done" not in st.session_state:
 if "started" not in st.session_state:
     st.session_state.started = False
 if not st.session_state.started:
+    if st.session_state.pop("_scroll_top_once", False):
+        scroll_to_top()
+
     st.subheader("Einverständniserklärung")
     with st.container(border=True):
         st.markdown(
@@ -219,11 +227,11 @@ if not st.session_state.started:
                 "teilnehmername":sget("teilnehmername","")
             }
             st.session_state.started=True
+            st.session_state._scroll_top_once = True
             st.rerun()
 
 # ================== Hauptfragebogen ==================
 def collect_records():
-    """Sammelt alle Antworten zu einer Liste von Datensätzen."""
     data=[]
     for section,devices in CATALOG.items():
         for dev in devices:
@@ -232,20 +240,16 @@ def collect_records():
             k2 = st.session_state.get(f"k2_{section}_{dev}")
             k4 = st.session_state.get(f"k4_{section}_{dev}")
             data.append({
-                "section":section,
-                "geraet":dev,
-                "vorhanden":bool(vorhanden),
+                "section":section, "geraet":dev, "vorhanden":bool(vorhanden),
                 "modulation":int(k1) if vorhanden and k1 is not None else "",
                 "dauer":int(k2) if vorhanden and k2 is not None else "",
                 "betriebsfenster":int(k4) if vorhanden and k4 is not None else ""
             })
     return data
 
-# Dialog für fehlende „Vorhanden“-Häkchen
 @st.dialog("Hinweis: Nicht markierte Geräte")
 def missing_devices_dialog(missing_list, proceed_key="proceed_submit"):
-    st.write(f"Es sind **{len(missing_list)} Geräte** noch **nicht als „Vorhanden“ markiert**. "
-             "Bitte prüfen Sie, ob diese Geräte wirklich **nicht vorhanden** sind oder ob die Angabe fehlt.")
+    st.write(f"Es sind **{len(missing_list)} Geräte** noch **nicht als „Vorhanden“ markiert**.")
     st.write(", ".join(missing_list))
     cols = st.columns(2)
     with cols[0]:
@@ -258,6 +262,9 @@ def missing_devices_dialog(missing_list, proceed_key="proceed_submit"):
             st.rerun()
 
 if st.session_state.started and not st.session_state.get("finished"):
+    if st.session_state.pop("_scroll_top_once", False):
+        scroll_to_top()
+
     all_records=[]
     for section,devices in CATALOG.items():
         st.markdown(f"## {section}")
@@ -273,28 +280,23 @@ if st.session_state.started and not st.session_state.get("finished"):
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
 
             all_records.append({
-                "section":section,
-                "geraet":dev,
-                "vorhanden":bool(vorhanden),
+                "section":section, "geraet":dev, "vorhanden":bool(vorhanden),
                 "modulation":int(k1) if vorhanden else "",
                 "dauer":int(k2) if vorhanden else "",
                 "betriebsfenster":int(k4) if vorhanden else ""
             })
 
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
-        # Prüfen, ob Geräte ohne Häkchen vorhanden sind
         missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]
         if len(missing) > 0:
             st.session_state["pending_records"] = all_records
             st.session_state["proceed_submit"] = None
             missing_devices_dialog(missing, proceed_key="proceed_submit")
             st.stop()
-
         st.session_state["pending_records"] = all_records
         st.session_state["proceed_submit"] = True
         st.rerun()
 
-# Wenn Nutzer nach Dialog „Trotzdem absenden“ gewählt hat
 if st.session_state.get("proceed_submit") is True and not st.session_state.get("finished"):
     all_records = st.session_state.get("pending_records", collect_records())
     df=pd.DataFrame(all_records)
@@ -309,16 +311,17 @@ if st.session_state.get("proceed_submit") is True and not st.session_state.get("
         "survey_version":SURVEY_VERSION
     }
     for k,v in metas.items(): df[k]=v
-
-    # Für Sheet-Kompatibilität sorgen (später im submit_to_gsheets wird an Header angepasst)
     result_msg = submit_to_gsheets(df)
     st.session_state.finished = True
     st.session_state.submit_result = result_msg
     st.session_state.records_count = len(df)
+    st.session_state._scroll_top_once = True
     st.rerun()
 
 # ================== OUTRO / Danke-Seite ==================
 if st.session_state.get("finished"):
+    if st.session_state.pop("_scroll_top_once", False):
+        scroll_to_top()
     st.markdown("""
 <div class="outro">
   <div class="check">✅</div>
