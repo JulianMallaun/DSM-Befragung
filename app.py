@@ -10,7 +10,7 @@ st.set_page_config(page_title="Befragung Lastflexibilität – Hotel", page_icon
 # ================== Konfiguration ==================
 VISUAL_SCALES = True                 # grafische Skalen (Testmodus EIN/AUS)
 ACCENT_RGB = "234, 88, 12"           # feste CI-Farbe Orange
-SURVEY_VERSION = "2025-09-listlayout-v23"
+SURVEY_VERSION = "2025-09-listlayout-v22-fix"
 
 # ================== Styles ==================
 STYLE = f"""
@@ -22,29 +22,6 @@ STYLE = f"""
   --text-dark: #e5e7eb;
 }}
 h1 {{ scroll-margin-top: 24px; }}
-
-/* STICKY Bereichstitel */
-.section-sticky {{
-  position: sticky;
-  top: calc(env(safe-area-inset-top, 0px) + 8px);
-  z-index: 7;
-  font-size: 1.6rem;
-  font-weight: 800;
-  padding: 8px 4px 10px 0;
-  margin: 10px 0 6px 0;
-  background: linear-gradient(to bottom, rgba(255,255,255,.95), rgba(255,255,255,.88));
-  color: var(--text-light);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
-  border-bottom: 1px solid rgba(0,0,0,.06);
-}}
-.section-sticky .bar{{
-  height: 3px;
-  width: 100%;
-  background: rgba(var(--accent-rgb), .35);
-  border-radius: 2px;
-  margin-top: 6px;
-}}
 
 /* Device + Trenner */
 .device-title {{ font-size: 1.2rem; font-weight: 800; margin: 10px 0 4px; color: rgb(var(--accent-rgb)); }}
@@ -83,11 +60,6 @@ h1 {{ scroll-margin-top: 24px; }}
 .outro .card {{ background: rgba(var(--accent-rgb), .06); border-radius: 14px; padding: 12px; margin: 14px auto; max-width: 40rem; }}
 
 @media (prefers-color-scheme: dark) {{
-  .section-sticky {{
-    background: linear-gradient(to bottom, rgba(17,24,39,.94), rgba(17,24,39,.88));
-    color: var(--text-dark);
-    border-bottom: 1px solid rgba(255,255,255,.08);
-  }}
   .outro p {{ color: rgba(255,255,255,.85); }}
   .outro .card {{ background: rgba(var(--accent-rgb), .16); }}
   .scale-rail {{ background: rgba(var(--accent-rgb), .22); }}
@@ -291,9 +263,9 @@ if st.session_state.started and not st.session_state.get("finished"):
     if st.session_state.pop("_scroll_top_once", False):
         scroll_to_top()
 
+    all_records=[]
     for section,devices in CATALOG.items():
-        # Sticky heading:
-        st.markdown(f'<div class="section-sticky">{section}<div class="bar"></div></div>', unsafe_allow_html=True)
+        st.markdown(f"## {section}")
         for idx, dev in enumerate(devices):
             if idx > 0:
                 st.markdown('<div class="separator"></div>', unsafe_allow_html=True)
@@ -305,8 +277,12 @@ if st.session_state.started and not st.session_state.get("finished"):
             k2 = criterion_radio_inline(K2_TITLE, K2_SHORT, K2_LABELS, key=f"k2_{section}_{dev}", disabled=not vorhanden)
             k4 = criterion_radio_inline(K4_TITLE, K4_SHORT, K4_LABELS, key=f"k4_{section}_{dev}", disabled=not vorhanden)
 
-    # Sammeln für Submit
-    all_records = collect_records()
+            all_records.append({
+                "section":section, "geraet":dev, "vorhanden":bool(vorhanden),
+                "modulation":int(k1) if vorhanden else "",
+                "dauer":int(k2) if vorhanden else "",
+                "betriebsfenster":int(k4) if vorhanden else ""
+            })
 
     if st.button("Jetzt absenden und speichern",type="primary",use_container_width=True):
         missing = [f"{clean_section_label(r['section'])} – {r['geraet']}" for r in all_records if not r["vorhanden"]]

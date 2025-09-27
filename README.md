@@ -1,8 +1,10 @@
-# DSM Befragungs-App (Hotel) – v23
+# DSM Befragungs-App (Hotel) – v22-fix
 
-Neu in v23
-- **Fixierter Bereichstitel (sticky)**: Die Abschnitts-Überschrift (z. B. „A) Küche“, „B) Wellness…“) bleibt beim Scrollen oben kleben – smartphonefreundlich mit Safe-Area-Abstand, leichter Hintergrund und feine Trennleiste.
-- Beinhaltet weiterhin Auto-Scroll, Prüf-Dialog vor dem Absenden und Google-Sheets-Header-Angleichung.
+Diese Version entspricht funktional der stabilen v22 (ohne Sticky-Header), repariert für Mobile:
+
+- **Auto-Scroll-to-Top** nach jedem Schritt (Intro → Einverständnis → Fragebogen → Danke).
+- **Pop-up vor dem Absenden** bei nicht markierten Geräten.
+- **Google-Sheets-Header-Anpassung**: Spalten werden an vorhandene Header im Tab `responses` angepasst.
 
 ## Start
 ```bash
